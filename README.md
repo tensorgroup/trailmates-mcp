@@ -37,7 +37,7 @@ Cloudflare Worker (TypeScript)
  └─ D1                      ── trails (authorization boundary)
 ```
 
-A `search_hikes` call arrives with an OAuth token. The provider verifies it and hands the tool the signed-in user's GitHub numeric id. The query is embedded with Workers AI, and Vectorize is asked for nearby vectors, filtered to shared trails plus that user's and by any distance, gain and difficulty constraints. Closure rules are not part of the vector filter. The candidate ids are then loaded from D1 (scoped to shared trails and the caller), every constraint is re-applied in code, the closure rules are applied, , and the results are returned with their status.
+A `search_hikes` call arrives with an OAuth token. The provider verifies it and hands the tool the signed-in user's GitHub numeric id. The query is embedded with Workers AI, and Vectorize is asked for nearby vectors, filtered to shared trails plus that user's and by any distance, gain and difficulty constraints. Closure rules are not part of the vector filter. The candidate ids are then loaded from D1 (scoped to shared trails and the caller), every constraint is re-applied in code, the closure rules are applied, and the results are returned with their status.
 
 D1 is the source of truth and the authorization boundary. Vectorize is only an index: its owner filter makes queries faster, but a vector id that is stale, injected or foreign still cannot return a row, because D1 will not hand out a private hike to anyone but its owner. Vectorize can be wiped and rebuilt from D1 at any time.
 
