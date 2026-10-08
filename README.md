@@ -2,6 +2,42 @@
 
 A remote [MCP](https://modelcontextprotocol.io) server, running on Cloudflare Workers, for finding local hikes by meaning ("shaded creek walk with a waterfall, under 3 miles"). It exposes three tools: `search_hikes`, `add_hike` and `delete_hike`. Search runs over a shared seed of 18 LA-area trails (Pasadena, Altadena, Griffith Park, Malibu, the Verdugos) plus any private hikes you add yourself. Private hikes are visible only to you, behind GitHub sign-in. Closures are first-class: trails closed by the Eaton Fire are hidden from search by default and shown, with their closed-through date, on request.
 
+## How to use it
+
+Status: hosted at https://trailmates.tensor.group. GitHub sign-in on the hosted instance is being set up (see the note under Try it); until then you can run your own copy (see Deploy your own).
+
+**1. Add it to your MCP client.** In Claude Code:
+
+```bash
+claude mcp add --transport http trailmates https://trailmates.tensor.group/mcp
+```
+
+In other clients (Claude Desktop, Cursor and so on), add a remote MCP server with the URL `https://trailmates.tensor.group/mcp` (Streamable HTTP).
+
+**2. Sign in with GitHub when asked.** You will see a consent page first. "Allow" lets the client search hikes; leave "Add and delete your private hikes" ticked if you want to save your own.
+
+**3. Just ask, in plain English.** For example:
+
+- "Find a shaded creek walk with a waterfall."
+- "Easy hikes under 3 miles near Pasadena."
+- "Tell me about Eaton Canyon." (Closed trails are still answered, with their status.)
+- "Show closed trails too."
+- "Add a hike called Backyard Loop at the end of my street in Altadena, 1.5 miles, easy."
+- "Delete my Backyard Loop hike."
+
+| Tool | What it does |
+|---|---|
+| `search_hikes` | Find hikes by meaning. Optional: max distance, max gain, difficulty, date, include closed. |
+| `add_hike` | Save a private hike only you can see. Optional: address. |
+| `delete_hike` | Remove one of your own hikes. |
+
+Good to know:
+
+- Results show a status (open, verify or closed) and an approximate trailhead address.
+- Closed trails are hidden unless you ask for them.
+- Private hikes are visible only to you.
+- The shared set is 18 LA-area trails.
+
 Each trail has an approximate trailhead address, returned with every search result (confirm it on a map before you drive). `add_hike` takes an optional `address` for your own hikes.
 
 Built on Workers AI embeddings, Cloudflare Vectorize (vectors), D1 (records and authorization), and `workers-oauth-provider` for OAuth.
