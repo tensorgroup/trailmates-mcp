@@ -38,13 +38,21 @@ export async function indexTrail(deps: Deps, t: Trail): Promise<void> {
 export interface SearchResult {
   hits: SearchHit[];
   /**
-   * Closed trails left out (include_closed not set) that would otherwise have made the result list:
-   * among visible candidates that pass every constraint, in rank order and ignoring exact-name
-   * matches (which are returned anyway), a closed one counts only if its position is within `limit`.
+   * Closed trails left out (include_closed not set) that would otherwise have made the result list.
+   * See searchHikes for the exact rule.
    */
   hiddenClosed: number;
 }
 
+/**
+ * Semantic search over shared trails plus the caller's own, scoped by D1, with exact-name matches first.
+ *
+ * `hiddenClosed` rule: take the visible candidates that pass every constraint, in rank order, leaving
+ * out exact-name matches. The exact-name matches actually returned take the first slots, so only
+ * max(0, limit - returnedNamed) positions remain. A closed trail hidden because include_closed is not
+ * set is counted only if its position is within those remaining slots. Exact-name matches are never
+ * counted; they are always returned.
+ */
 export async function searchHikes(deps: Deps, userId: string, input: SearchInput): Promise<SearchResult> {
   const date = input.date ?? laToday(deps.now());
   const limit = Math.min(input.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
@@ -90,9 +98,10 @@ export async function searchHikes(deps: Deps, userId: string, input: SearchInput
     });
   }
   const namedIds = new Set(named.map((h) => h.trail.id));
+  const openSlots = Math.max(0, limit - Math.min(named.length, limit));
   const hiddenClosed = wouldBe
     .filter((c) => !namedIds.has(c.id))
-    .slice(0, limit)
+    .slice(0, openSlots)
     .filter((c) => c.hidden).length;
   return { hits: [...named, ...hits.filter((h) => !namedIds.has(h.trail.id))].slice(0, limit), hiddenClosed };
 }

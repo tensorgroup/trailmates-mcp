@@ -168,6 +168,26 @@ describe("searchHikes hiddenClosed only counts closed trails that would have mad
     await twoRanked("second");
     expect((await searchHikes(deps, "42", { query: "anything", queryVector: unit(0), limit: 2 })).hiddenClosed).toBe(1);
   });
+  it("shrinks the counted window by the exact-name matches that take the first slots", async () => {
+    const withNamed = async (closedId: "top" | "second") => {
+      await twoRanked(closedId);
+      await deps.repo.upsert(makeTrail({ id: "seed:named", name: "Exact Name" })); // D1 only, found by name
+      return searchHikes(deps, "42", { query: "Exact Name", queryVector: unit(0), limit: 2 });
+    };
+    const second = await withNamed("second");
+    expect(second.hits.map((h) => h.trail.id)).toEqual(["seed:named", "seed:top"]);
+    expect(second.hiddenClosed).toBe(0); // the name match would have pushed it out anyway
+    const first = await withNamed("top");
+    expect(first.hits.map((h) => h.trail.id)).toEqual(["seed:named", "seed:second"]);
+    expect(first.hiddenClosed).toBe(1);
+  });
+  it("counts nothing when exact-name matches fill every slot", async () => {
+    await twoRanked("top");
+    await deps.repo.upsert(makeTrail({ id: "seed:named", name: "Exact Name" }));
+    const r = await searchHikes(deps, "42", { query: "Exact Name", queryVector: unit(0), limit: 1 });
+    expect(r.hits.map((h) => h.trail.id)).toEqual(["seed:named"]);
+    expect(r.hiddenClosed).toBe(0);
+  });
   it("does not let trails dropped by constraints take up a position", async () => {
     // A long open trail ranked first is dropped by maxDistance, so the closed one is position 1 of 1.
     await twoRanked("second");
