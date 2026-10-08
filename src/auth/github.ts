@@ -19,6 +19,15 @@ export function githubAuthorizeUrl(p: { clientId: string; redirectUri: string; s
   return u.toString();
 }
 
+/** Parses a GitHub JSON reply; a non-JSON body (an HTML error page, a proxy timeout) becomes a clear error without echoing it. */
+async function readJson<T>(res: Response, what: string): Promise<T> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new Error(`${what} returned a non-JSON reply (HTTP ${res.status})`);
+  }
+}
+
 export async function exchangeGithubCode(
   p: { clientId: string; clientSecret: string; code: string; codeVerifier: string; redirectUri: string },
   fetchFn: typeof fetch = fetch,
@@ -34,7 +43,7 @@ export async function exchangeGithubCode(
       redirect_uri: p.redirectUri,
     }).toString(),
   });
-  const json = (await res.json()) as { access_token?: string; error?: string };
+  const json = await readJson<{ access_token?: string; error?: string }>(res, "GitHub token exchange");
   if (!res.ok || !json.access_token) throw new Error(`GitHub token exchange failed: ${json.error ?? res.status}`);
   return json.access_token;
 }
@@ -43,7 +52,7 @@ export async function fetchGithubUser(token: string, fetchFn: typeof fetch = fet
   const res = await fetchFn("https://api.github.com/user", {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "User-Agent": "trailmates-mcp" },
   });
-  const json = (await res.json()) as { id?: unknown; login?: unknown };
+  const json = await readJson<{ id?: unknown; login?: unknown }>(res, "GitHub user lookup");
   if (!res.ok || typeof json.id !== "number" || typeof json.login !== "string") {
     throw new Error("GitHub user lookup failed");
   }

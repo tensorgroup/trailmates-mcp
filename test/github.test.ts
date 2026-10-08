@@ -42,4 +42,10 @@ describe("exchangeGithubCode / fetchGithubUser", () => {
     const f = (async () => new Response(JSON.stringify({ login: "octo" }), { status: 200 })) as unknown as typeof fetch;
     await expect(fetchGithubUser("tok", f)).rejects.toThrow();
   });
+  it("turns a non-JSON reply into a clear error that does not echo the body", async () => {
+    const f = (async () => new Response("<html>LEAKY upstream page</html>", { status: 502 })) as unknown as typeof fetch;
+    const exchange = exchangeGithubCode({ clientId: "c", clientSecret: "TOPSECRET", code: "x", codeVerifier: "v", redirectUri: "r" }, f);
+    await expect(exchange).rejects.toThrow("GitHub token exchange returned a non-JSON reply (HTTP 502)");
+    await expect(fetchGithubUser("tok", f)).rejects.toThrow("GitHub user lookup returned a non-JSON reply (HTTP 502)");
+  });
 });

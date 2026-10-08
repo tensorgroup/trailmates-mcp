@@ -12,7 +12,17 @@ import { exchangeGithubCode, fetchGithubUser, githubAuthorizeUrl, s256 } from ".
 const html = (body: string, headers?: Headers) => {
   const h = new Headers(headers); // keeps the provider's binding cookie, frame-ancestors and no-cache headers
   h.set("Content-Type", "text/html; charset=utf-8");
+  h.set("X-Content-Type-Options", "nosniff");
   return new Response(body, { status: 200, headers: h });
+};
+
+/** A plain-text error page; never put secrets, stacks or upstream bodies in `body`. */
+const textError = (status: number, body: string, headers?: Headers) => {
+  const h = new Headers(headers);
+  h.set("Content-Type", "text/plain; charset=utf-8");
+  h.set("Cache-Control", "no-store");
+  h.set("X-Content-Type-Options", "nosniff");
+  return new Response(body, { status, headers: h });
 };
 
 /**
@@ -26,10 +36,7 @@ async function guarded(fn: () => Promise<Response>): Promise<Response> {
   } catch (err) {
     if (err instanceof AuthorizationError) {
       if (err.redirectTo) return Response.redirect(err.redirectTo, 302);
-      return new Response(`Authorization error: ${err.description}`, {
-        status: 400,
-        headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-      });
+      return textError(400, `Authorization error: ${err.description}`);
     }
     throw err;
   }
@@ -45,7 +52,12 @@ async function authorizeGet(request: Request, env: Env): Promise<Response> {
 
 async function authorizePost(request: Request, env: Env): Promise<Response> {
   const oauth = env.OAUTH_PROVIDER;
-  const form = await request.formData();
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return textError(400, "Expected a form submission.");
+  }
   const handle = String(form.get("handle") ?? "");
   if (form.get("decision") !== "approve") {
     const denied = await oauth.denyConsent(request, handle);
@@ -78,15 +90,22 @@ async function callback(request: Request, env: Env): Promise<Response> {
     clear.set("Location", authorizationErrorRedirect(original, "access_denied", "GitHub sign-in was not completed"));
     return new Response(null, { status: 302, headers: clear });
   }
-  const token = await exchangeGithubCode({
-    clientId: env.GITHUB_CLIENT_ID,
-    clientSecret: env.GITHUB_CLIENT_SECRET,
-    code,
-    codeVerifier: data.verifier,
-    redirectUri: `${env.PUBLIC_BASE_URL}/callback`,
-  });
-  const user = await fetchGithubUser(token); // the GitHub token is used once here and never stored
-  const userId = String(user.id);
+  let userId: string;
+  try {
+    const token = await exchangeGithubCode({
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+      code,
+      codeVerifier: data.verifier,
+      redirectUri: `${env.PUBLIC_BASE_URL}/callback`,
+    });
+    const user = await fetchGithubUser(token); // the GitHub token is used once here and never stored
+    userId = String(user.id);
+  } catch (err) {
+    // github.ts errors carry no secrets or upstream bodies; the user only gets generic text.
+    console.error("github sign-in failed", err instanceof Error ? `${err.name}: ${err.message}` : "unknown");
+    return textError(502, "GitHub sign-in failed. Please try connecting again.", clear);
+  }
   const { redirectTo } = await oauth.completeAuthorization({
     request: original,
     userId,
@@ -106,14 +125,16 @@ export const authHandler = {
     if (url.pathname === "/callback" && request.method === "GET") return guarded(() => callback(request, env));
     if (url.pathname === "/healthz") return new Response("ok");
     if (url.pathname.startsWith("/admin/")) {
-      const deps = makeDeps(env);
+      // Actions build their deps lazily, so no binding is read until handleAdmin has checked the token.
+      const deps = () => makeDeps(env);
       return handleAdmin(request, env.ADMIN_TOKEN, {
-        seed: () => seedShared(deps, normalizeSeed(seedJson)),
+        seed: () => seedShared(deps(), normalizeSeed(seedJson)),
         reindex: async (onlyUnindexed) => {
-          if (!onlyUnindexed) await deps.repo.markAllPending(); // ?all=1 re-embeds everything, 20 rows per call
-          return reindexTrails(deps);
+          const d = deps();
+          if (!onlyUnindexed) await d.repo.markAllPending(); // ?all=1 re-embeds everything, 20 rows per call
+          return reindexTrails(d);
         },
-        evalRun: () => runEval(deps),
+        evalRun: () => runEval(deps()),
       });
     }
     if (url.pathname === "/") return new Response("Trailmates MCP server. Connect an MCP client to /mcp.");

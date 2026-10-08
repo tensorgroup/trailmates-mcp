@@ -141,6 +141,7 @@ describe("GET /authorize", () => {
     expect(res.headers.get("Content-Security-Policy")).toBe("frame-ancestors 'none'");
     expect(res.headers.get("X-Frame-Options")).toBe("DENY");
     expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     const body = await res.text();
     expect(body).toContain('name="handle" value="hand&#34;le&#60;1&#62;"');
     expect(body).not.toContain("<img");
@@ -187,6 +188,22 @@ describe("POST /authorize", () => {
     const cookies = res.headers.getSetCookie();
     expect(cookies.some((c) => c.startsWith("__Host-oauth-consent-abc=;"))).toBe(true);
     expect(cookies.some((c) => c.startsWith("__Host-oauth-upstream-xyz=hash"))).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["JSON", "application/json", JSON.stringify({ handle: "h1", decision: "approve" })],
+    ["plain text", "text/plain", "handle=h1&decision=approve"],
+  ])("a %s body is a 400, not a 500, and touches no OAuth state", async (_label, type, body) => {
+    const { helpers, calls } = fakeOAuth();
+    const res = await authHandler.fetch(
+      new Request(`${BASE}/authorize`, { method: "POST", headers: { "Content-Type": type }, body }),
+      makeEnv(helpers),
+    );
+    expect(res.status).toBe(400);
+    expect(res.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(calls).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -252,6 +269,43 @@ describe("GET /callback", () => {
   });
 });
 
+describe("GET /callback when GitHub fails", () => {
+  const failures: [string, (url: string) => Response | undefined][] = [
+    ["a token-exchange error reply", (url) => url.includes("access_token") ? new Response(JSON.stringify({ error: "bad_verification_code" }), { status: 200 }) : undefined],
+    ["a non-JSON token reply", (url) => url.includes("access_token") ? new Response("<html>gh-SECRET Bad Gateway</html>", { status: 502 }) : undefined],
+    ["a failed user lookup", (url) => url.includes("api.github.com") ? new Response(JSON.stringify({ message: "Bad credentials" }), { status: 401 }) : undefined],
+    ["a non-JSON user reply", (url) => url.includes("api.github.com") ? new Response("upstream timeout", { status: 504 }) : undefined],
+  ];
+  it.each(failures)("%s is a generic 502 that leaks nothing and does not complete authorization", async (_label, override) => {
+    const passthrough = fetchMock.getMockImplementation() as (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      return override(url) ?? passthrough(input, init);
+    });
+    const errors: unknown[][] = [];
+    const original = console.error;
+    console.error = (...a: unknown[]) => { errors.push(a); };
+    let res: Response;
+    try {
+      const { helpers, calls } = fakeOAuth();
+      res = await authHandler.fetch(new Request(`${BASE}/callback?code=gh-code&state=upstream-state-123`), makeEnv(helpers));
+      expect(calls.map((c) => c.method)).toEqual(["finishUpstream"]);
+    } finally {
+      console.error = original;
+    }
+    expect(res.status).toBe(502);
+    expect(res.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("Set-Cookie")).toContain("__Host-oauth-upstream-xyz=; Max-Age=0");
+    const body = await res.text();
+    expect(body).toBe("GitHub sign-in failed. Please try connecting again.");
+    expect(body).not.toMatch(/SECRET|gho_|at |Error/);
+    expect(errors.length).toBe(1);
+    expect(JSON.stringify(errors)).not.toContain("gh-SECRET");
+  });
+});
+
 describe("AuthorizationError handling", () => {
   it("a tampered/expired state (AuthorizationError without redirectTo) is a 400 with no-store, not a 500", async () => {
     const error = new AuthorizationError("invalid_request", { description: "Transaction expired or already used" });
@@ -260,6 +314,7 @@ describe("AuthorizationError handling", () => {
     expect(res.status).toBe(400);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(res.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(await res.text()).toContain("Transaction expired or already used");
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -301,5 +356,14 @@ describe("admin routes through authHandler", () => {
     expect((await authHandler.fetch(seed(), env)).status).toBe(401);
     expect((await authHandler.fetch(seed("Bearer wrong"), env)).status).toBe(401);
     expect(calls).toEqual([]);
+  });
+  it("does not even build the data deps (read env bindings) before the token check passes", async () => {
+    const { helpers } = fakeOAuth();
+    const env = makeEnv(helpers, { ADMIN_TOKEN: "s3cret" });
+    for (const name of ["DB", "AI", "VECTORIZE"] as const) {
+      Object.defineProperty(env, name, { get: () => { throw new Error(`env.${name} read before auth`); } });
+    }
+    const res = await authHandler.fetch(new Request(`${BASE}/admin/eval`, { method: "POST", headers: { authorization: "Bearer wrong" } }), env);
+    expect(res.status).toBe(401);
   });
 });
