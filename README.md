@@ -2,14 +2,16 @@
 
 A remote [MCP](https://modelcontextprotocol.io) server, running on Cloudflare Workers, for finding local hikes by meaning ("shaded creek walk with a waterfall, under 3 miles"). It exposes three tools: `search_hikes`, `add_hike` and `delete_hike`. Search runs over a shared seed of 18 LA-area trails (Pasadena, Altadena, Griffith Park, Malibu, the Verdugos) plus any private hikes you add yourself. Private hikes are visible only to you, behind GitHub sign-in. Closures are first-class: trails closed by the Eaton Fire are hidden from search by default and shown, with their closed-through date, on request.
 
+Each trail has an approximate trailhead address, returned with every search result (confirm it on a map before you drive). `add_hike` takes an optional `address` for your own hikes.
+
 Built on Workers AI embeddings, Cloudflare Vectorize (vectors), D1 (records and authorization), and `workers-oauth-provider` for OAuth.
 
 ## Try it
 
-The server lives at `https://trailmates-mcp.billzajac.workers.dev` (MCP endpoint `/mcp`, health check `/healthz`). All of `/mcp` requires GitHub sign-in; there is no anonymous access.
+The server lives at `https://trailmates.tensor.group` (MCP endpoint `/mcp`, health check `/healthz`). All of `/mcp` requires GitHub sign-in; there is no anonymous access.
 
 ```bash
-claude mcp add --transport http trailmates https://trailmates-mcp.billzajac.workers.dev/mcp
+claude mcp add --transport http trailmates https://trailmates.tensor.group/mcp
 ```
 
 Then authenticate from your client (in Claude Code, run `/mcp`). You will see a consent page for your client, then GitHub.
@@ -120,7 +122,7 @@ npx wrangler d1 create trailmates
 npx wrangler kv namespace create OAUTH_KV
 ```
 
-**3. Edit `wrangler.jsonc` before anything else touches D1.** The committed `database_id` and KV `id` belong to the maintainer's Cloudflare account and must be replaced: put the `database_id` and the KV `id` printed by the commands above in their place. Set `PUBLIC_BASE_URL` to a placeholder such as `https://trailmates-mcp.example.workers.dev` for now. Then apply the migration, deploy once to learn your workers.dev URL, set `PUBLIC_BASE_URL` to the real URL, and deploy again:
+**3. Edit `wrangler.jsonc` before anything else touches D1.** The committed `database_id` and KV `id` belong to the maintainer's Cloudflare account and must be replaced: put the `database_id` and the KV `id` printed by the commands above in their place. Set `PUBLIC_BASE_URL` to a placeholder such as `https://trailmates-mcp.example.workers.dev` for now. Then apply the migrations, deploy once to learn your workers.dev URL, set `PUBLIC_BASE_URL` to the real URL, and deploy again:
 
 ```bash
 npx wrangler d1 migrations apply trailmates --remote
@@ -130,6 +132,8 @@ npx wrangler deploy
 export PUBLIC_BASE_URL="https://trailmates-mcp.<your-subdomain>.workers.dev"
 curl -s "$PUBLIC_BASE_URL/healthz"   # ok
 ```
+
+**Optional: custom domain.** To serve from your own hostname instead of workers.dev, add `"routes": [{ "pattern": "your.domain.example", "custom_domain": true }]` to `wrangler.jsonc` (the domain's zone must be on your Cloudflare account), set `PUBLIC_BASE_URL` to the same `https://` URL, and deploy. Use that URL everywhere below, including the GitHub callback. The MCP endpoint only accepts requests whose `Host` matches the hostname of `PUBLIC_BASE_URL`, so `/mcp` on the workers.dev URL stops answering once you switch.
 
 **4. Create a GitHub OAuth app and set the secrets.** At github.com/settings/developers create an OAuth App with Homepage URL `<PUBLIC_BASE_URL>` and Authorization callback URL `<PUBLIC_BASE_URL>/callback`. Each command prompts for its value:
 
@@ -159,6 +163,14 @@ curl -s -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "$PUBLIC_BASE_URL/admin/
 ```
 
 The Workers Free plan allows 50 subrequests per invocation, so the code batches embedding, Vectorize and D1 calls and indexes in chunks of 20.
+
+**Updating an existing deployment.** After pulling the change that added trailhead addresses, apply the new migration before deploying, then re-seed so the shared trails pick up their addresses and new descriptions (seeding re-embeds them):
+
+```bash
+npx wrangler d1 migrations apply <db> --remote   # adds the address column
+npx wrangler deploy
+curl -s -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "$PUBLIC_BASE_URL/admin/seed"
+```
 
 ## Development
 
