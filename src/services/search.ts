@@ -14,6 +14,8 @@ export interface SearchInput extends SearchConstraints {
   includeClosed?: boolean;
   date?: string;
   limit?: number;
+  /** Precomputed embedding of `query`; when given, the embed call is skipped (batch callers like the eval). */
+  queryVector?: number[];
 }
 
 export interface SearchHit {
@@ -38,7 +40,7 @@ export async function searchHikes(deps: Deps, userId: string, input: SearchInput
   const limit = Math.min(input.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const query = input.query.trim();
 
-  const vector = await deps.embedder.embed(query);
+  const vector = input.queryVector ?? (await deps.embedder.embed(query));
   const matches = await deps.vectors.query(vector, { topK: CANDIDATES, filter: buildVectorFilter(userId, input) });
   // D1 is the authorization boundary: ids that are missing or not visible to this user vanish here.
   const visible = new Map((await deps.repo.getVisibleByIds(matches.map((m) => m.id), userId)).map((t) => [t.id, t]));

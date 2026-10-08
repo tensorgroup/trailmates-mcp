@@ -5,6 +5,11 @@ export interface EvalCase {
   date: string; // frozen: results must not drift with today's date
 }
 
+// Workers Free allows 50 subrequests per invocation. runEval spends 1 batched embed call plus 3 per case
+// (Vectorize query, D1 getVisibleByIds, D1 findVisibleByName): 1 + 3 * 15 = 46, leaving a little headroom.
+// Raise this only together with that arithmetic.
+export const MAX_EVAL_CASES = 15;
+
 const EATON = ["seed:eaton-canyon-nature-center", "seed:eaton-canyon-pinecrest"];
 
 // Frozen: changing a case changes the published results. Add cases, do not edit them.

@@ -6,7 +6,7 @@ import type { Deps } from "../src/services/deps";
 import type { Trail } from "../src/domain/types";
 import { toVectorMetadata } from "../src/domain/search-rules";
 import { applySchema, clearTrails } from "./helpers/db";
-import { HashEmbedder, InMemoryVectorStore } from "./helpers/fakes";
+import { FailingEmbedder, HashEmbedder, InMemoryVectorStore } from "./helpers/fakes";
 import { makeTrail } from "./helpers/fixtures";
 
 const db = (env as unknown as { DB: D1Database }).DB;
@@ -29,6 +29,11 @@ beforeEach(async () => {
 });
 
 describe("searchHikes", () => {
+  it("uses a precomputed queryVector without calling the embedder", async () => {
+    const queryVector = await new HashEmbedder().embed("shady creek waterfall");
+    const hits = await searchHikes({ ...deps, embedder: new FailingEmbedder() }, "42", { query: "shady creek waterfall", queryVector });
+    expect(hits[0]?.trail.id).toBe("seed:falls");
+  });
   it("ranks by meaning and hides closed trails by default", async () => {
     const hits = await searchHikes(deps, "42", { query: "shady creek waterfall" });
     expect(hits[0]?.trail.id).toBe("seed:falls");
