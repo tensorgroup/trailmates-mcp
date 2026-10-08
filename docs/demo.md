@@ -10,7 +10,7 @@ Setup: connect the client (`claude mcp add --transport http trailmates <your-url
 
 > Find me a shaded creek walk with a waterfall. Keep it to 4 short bullets with the status and address.
 
-Expected: `search_hikes` returns open or verify trails with their approximate trailhead addresses. Waterfall and creek trails such as Solstice Canyon and Escondido Falls come back with status `verify` (unconfirmed in the seed). The closed Eaton Canyon entrances and Millard Falls are not listed. The response carries `hidden_closed` with the number of closed trails that were left out, plus a note saying how to see them.
+Expected: `search_hikes` returns open or verify trails with their approximate trailhead addresses. Waterfall and creek trails such as Solstice Canyon and Escondido Falls come back with status `verify` (unconfirmed in the seed). The closed Eaton Canyon entrances and Millard Falls are not listed. `hidden_closed` counts closed trails that would otherwise have ranked among these results; when it is above 0 the response also carries a note saying how to see them.
 
 ## 2. Ask for closed trails
 

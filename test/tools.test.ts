@@ -63,6 +63,14 @@ describe("search_hikes tool", () => {
     expect(body.hidden_closed).toBe(0);
     expect(body).not.toHaveProperty("note");
   });
+  it("reports hidden_closed 0 and no note when the closed trail ranks below the returned results", async () => {
+    const bulk = Array.from({ length: 12 }, (_, i) => makeTrail({ id: `seed:bulk${i}`, name: `Bulk ${i}`, description: "common bulk words" }));
+    await seedShared(ctx.deps, bulk);
+    const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "common bulk words" }))));
+    expect(body.count).toBe(10);
+    expect(body.hidden_closed).toBe(0);
+    expect(body).not.toHaveProperty("note");
+  });
   it("reports hidden_closed 0 and no note when no closed trail matched", async () => {
     await clearTrails(db);
     await seedShared(ctx.deps, [makeTrail({ id: "seed:open", name: "Open Falls", description: "Shady creek walk to a waterfall." })]);

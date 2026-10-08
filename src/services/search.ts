@@ -38,8 +38,9 @@ export async function indexTrail(deps: Deps, t: Trail): Promise<void> {
 export interface SearchResult {
   hits: SearchHit[];
   /**
-   * Visible candidates that passed every constraint but were left out only because they are closed
-   * (include_closed not set). Exact-name matches are returned anyway and are not counted.
+   * Closed trails left out (include_closed not set) that would otherwise have made the result list:
+   * among visible candidates that pass every constraint, in rank order and ignoring exact-name
+   * matches (which are returned anyway), a closed one counts only if its position is within `limit`.
    */
   hiddenClosed: number;
 }
@@ -55,17 +56,17 @@ export async function searchHikes(deps: Deps, userId: string, input: SearchInput
   const visible = new Map((await deps.repo.getVisibleByIds(matches.map((m) => m.id), userId)).map((t) => [t.id, t]));
 
   const hits: SearchHit[] = [];
-  const hiddenClosedIds = new Set<string>();
+  // Every candidate that would be a result if closures were ignored, in rank order.
+  const wouldBe: { id: string; hidden: boolean }[] = [];
   for (const m of matches) {
     const trail = visible.get(m.id);
     if (!trail) continue;
     const constraint = checkConstraints(trail, input);
     if (!constraint.ok) continue;
     const closure = evaluateClosure(trail, date);
-    if (closure.availability === "excluded" && !input.includeClosed) {
-      hiddenClosedIds.add(trail.id);
-      continue;
-    }
+    const hidden = closure.availability === "excluded" && !input.includeClosed;
+    wouldBe.push({ id: trail.id, hidden });
+    if (hidden) continue;
     hits.push({
       trail,
       score: m.score,
@@ -89,9 +90,9 @@ export async function searchHikes(deps: Deps, userId: string, input: SearchInput
     });
   }
   const namedIds = new Set(named.map((h) => h.trail.id));
-  for (const id of namedIds) hiddenClosedIds.delete(id);
-  return {
-    hits: [...named, ...hits.filter((h) => !namedIds.has(h.trail.id))].slice(0, limit),
-    hiddenClosed: hiddenClosedIds.size,
-  };
+  const hiddenClosed = wouldBe
+    .filter((c) => !namedIds.has(c.id))
+    .slice(0, limit)
+    .filter((c) => c.hidden).length;
+  return { hits: [...named, ...hits.filter((h) => !namedIds.has(h.trail.id))].slice(0, limit), hiddenClosed };
 }

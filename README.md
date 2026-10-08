@@ -34,7 +34,7 @@ In other clients (Claude Desktop, Cursor and so on), add a remote MCP server wit
 Good to know:
 
 - Results show a status (open, verify or closed) and an approximate trailhead address.
-- Closed trails are hidden unless you ask for them, and the response says how many were hidden.
+- Closed trails are hidden unless you ask for them, and the response says how many closed trails would have appeared in the results.
 - A hike you add usually appears in search within seconds, occasionally a minute or more; searching by its exact name works immediately.
 - Private hikes are visible only to you.
 - The shared set is 18 LA-area trails.

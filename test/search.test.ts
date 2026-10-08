@@ -127,6 +127,57 @@ describe("searchHikes hiddenClosed", () => {
   });
 });
 
+describe("searchHikes hiddenClosed only counts closed trails that would have made the results", () => {
+  const unit = (i: number, j?: number, wj = 0) => {
+    const v = new Array<number>(256).fill(0);
+    v[i] = j === undefined ? 1 : Math.sqrt(1 - wj * wj);
+    if (j !== undefined) v[j] = wj;
+    return v;
+  };
+  /** Two trails with hand-made vectors: `top` scores 1.0 against the query, `second` scores 0.8. */
+  async function twoRanked(closedId: "top" | "second") {
+    await clearTrails(db);
+    vectors = new InMemoryVectorStore();
+    deps = { ...deps, vectors };
+    for (const [id, v] of [["top", unit(0)], ["second", unit(0, 1, 0.6)]] as const) {
+      const t = makeTrail({ id: `seed:${id}`, name: `Trail ${id}`, ...(id === closedId ? { status: "closed" as const, closedUntil: "2027-12-31" } : {}) });
+      await deps.repo.upsert(t);
+      vectors.injectRaw(t.id, v, toVectorMetadata(t));
+    }
+  }
+  it("is 0 for an unrelated query when more than `limit` open trails outrank the closed one", async () => {
+    for (let i = 0; i < 12; i++) await add(makeTrail({ id: `seed:bulk${i}`, name: `Bulk ${i}`, description: "common bulk words" }));
+    const r = await searchHikes(deps, "42", { query: "common bulk words" });
+    expect(r.hits).toHaveLength(10);
+    expect(r.hiddenClosed).toBe(0);
+  });
+  it("counts a closed trail ranked inside the limit", async () => {
+    expect((await searchHikes(deps, "42", { query: "creek canyon waterfall" })).hiddenClosed).toBe(1);
+  });
+  it("with limit 1, counts a closed trail ranked 1st but not one ranked 2nd", async () => {
+    await twoRanked("top");
+    const first = await searchHikes(deps, "42", { query: "anything", queryVector: unit(0), limit: 1 });
+    expect(first.hits.map((h) => h.trail.id)).toEqual(["seed:second"]); // the open runner-up fills the slot
+    expect(first.hiddenClosed).toBe(1);
+    await twoRanked("second");
+    const second = await searchHikes(deps, "42", { query: "anything", queryVector: unit(0), limit: 1 });
+    expect(second.hits.map((h) => h.trail.id)).toEqual(["seed:top"]);
+    expect(second.hiddenClosed).toBe(0);
+  });
+  it("counts the 2nd-ranked closed trail once the limit makes room for it", async () => {
+    await twoRanked("second");
+    expect((await searchHikes(deps, "42", { query: "anything", queryVector: unit(0), limit: 2 })).hiddenClosed).toBe(1);
+  });
+  it("does not let trails dropped by constraints take up a position", async () => {
+    // A long open trail ranked first is dropped by maxDistance, so the closed one is position 1 of 1.
+    await twoRanked("second");
+    await deps.repo.upsert(makeTrail({ id: "seed:top", name: "Trail top", distanceMinMi: 9, distanceMaxMi: 10 }));
+    const r = await searchHikes(deps, "42", { query: "anything", queryVector: unit(0), limit: 1, maxDistanceMi: 3 });
+    expect(r.hits).toHaveLength(0);
+    expect(r.hiddenClosed).toBe(1);
+  });
+});
+
 describe("searchHikes exact-name lookup", () => {
   it("finds a hike by exact name straight from D1, before its vector exists", async () => {
     await deps.repo.upsert(makeTrail({ id: "u:new", owner: "1", name: "Demo Loop" })); // no indexTrail call
