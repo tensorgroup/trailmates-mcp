@@ -35,7 +35,16 @@ export async function indexTrail(deps: Deps, t: Trail): Promise<void> {
   await deps.vectors.upsert([{ id: t.id, values, metadata: toVectorMetadata(t) }]);
 }
 
-export async function searchHikes(deps: Deps, userId: string, input: SearchInput): Promise<SearchHit[]> {
+export interface SearchResult {
+  hits: SearchHit[];
+  /**
+   * Visible candidates that passed every constraint but were left out only because they are closed
+   * (include_closed not set). Exact-name matches are returned anyway and are not counted.
+   */
+  hiddenClosed: number;
+}
+
+export async function searchHikes(deps: Deps, userId: string, input: SearchInput): Promise<SearchResult> {
   const date = input.date ?? laToday(deps.now());
   const limit = Math.min(input.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const query = input.query.trim();
@@ -46,13 +55,17 @@ export async function searchHikes(deps: Deps, userId: string, input: SearchInput
   const visible = new Map((await deps.repo.getVisibleByIds(matches.map((m) => m.id), userId)).map((t) => [t.id, t]));
 
   const hits: SearchHit[] = [];
+  const hiddenClosedIds = new Set<string>();
   for (const m of matches) {
     const trail = visible.get(m.id);
     if (!trail) continue;
     const constraint = checkConstraints(trail, input);
     if (!constraint.ok) continue;
     const closure = evaluateClosure(trail, date);
-    if (closure.availability === "excluded" && !input.includeClosed) continue;
+    if (closure.availability === "excluded" && !input.includeClosed) {
+      hiddenClosedIds.add(trail.id);
+      continue;
+    }
     hits.push({
       trail,
       score: m.score,
@@ -76,5 +89,9 @@ export async function searchHikes(deps: Deps, userId: string, input: SearchInput
     });
   }
   const namedIds = new Set(named.map((h) => h.trail.id));
-  return [...named, ...hits.filter((h) => !namedIds.has(h.trail.id))].slice(0, limit);
+  for (const id of namedIds) hiddenClosedIds.delete(id);
+  return {
+    hits: [...named, ...hits.filter((h) => !namedIds.has(h.trail.id))].slice(0, limit),
+    hiddenClosed: hiddenClosedIds.size,
+  };
 }

@@ -22,7 +22,7 @@ export function createServer(env: Env): McpServer {
     "search_hikes",
     {
       description:
-        "Find hikes by meaning, e.g. 'shaded creek walk with a waterfall'. Searches the shared LA-area trails plus the caller's private hikes. Closed trails are hidden unless include_closed is true; a trail named exactly is always returned with its status. Distances and gain are matched on a trail's upper bound.",
+        "Find hikes by meaning, e.g. 'shaded creek walk with a waterfall'. Searches the shared LA-area trails plus the caller's private hikes. Closed trails are hidden by default. Set include_closed to true whenever the user asks about closed trails, mentions a closure, or asks about a specific trail that might be closed. The response includes hidden_closed telling you how many were hidden. A trail named exactly is always returned with its status. Distances and gain are matched on a trail's upper bound.",
       inputSchema: z.object(searchHikesShape),
       annotations: { readOnlyHint: true },
     },
@@ -33,7 +33,7 @@ export function createServer(env: Env): McpServer {
     "add_hike",
     {
       description:
-        "Add a private hike visible only to you. Re-adding the same name and trailhead updates it. New hikes may take a few seconds to appear in search.",
+        "Add a private hike visible only to you. Re-adding the same name and trailhead updates it. A new hike usually appears in search within seconds, occasionally a minute or more; searching by its exact name works immediately.",
       inputSchema: z.object(addHikeShape),
     },
     (args, context) => callTool(() => addHikeTool(toolContext(env, context), args)),

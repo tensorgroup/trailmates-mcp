@@ -50,6 +50,26 @@ describe("search_hikes tool", () => {
     const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "creek canyon waterfall", include_closed: true }))));
     expect(body.results.find((x: { id: string }) => x.id === "seed:eaton")).toMatchObject({ status: "closed", closed_through: "2027-12-31" });
   });
+  it("reports how many closed trails were hidden, with a note telling the caller how to see them", async () => {
+    for (const extra of [{}, { include_closed: false }]) {
+      const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "creek canyon waterfall", ...extra }))));
+      expect(body.results.map((x: { id: string }) => x.id)).not.toContain("seed:eaton");
+      expect(body.hidden_closed).toBe(1);
+      expect(body.note).toBe("1 closed trail(s) matched but are hidden. Call again with include_closed set to true to see them and their closed_through dates.");
+    }
+  });
+  it("reports hidden_closed 0 and no note when include_closed is true", async () => {
+    const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "creek canyon waterfall", include_closed: true }))));
+    expect(body.hidden_closed).toBe(0);
+    expect(body).not.toHaveProperty("note");
+  });
+  it("reports hidden_closed 0 and no note when no closed trail matched", async () => {
+    await clearTrails(db);
+    await seedShared(ctx.deps, [makeTrail({ id: "seed:open", name: "Open Falls", description: "Shady creek walk to a waterfall." })]);
+    const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "shady creek waterfall" }))));
+    expect(body.hidden_closed).toBe(0);
+    expect(body).not.toHaveProperty("note");
+  });
   it.each([
     [{ query: "" }],
     [{ query: "   " }],
@@ -74,6 +94,7 @@ describe("add_hike / delete_hike tools", () => {
   it("adds then deletes a private hike", async () => {
     const added = JSON.parse(text(await callTool(() => addHikeTool(ctx, args))));
     expect(added.index_state).toBe("indexed");
+    expect(added.message).toBe("Saved. It usually appears in search within seconds, occasionally a minute or more; searching by its exact name works immediately.");
     const found = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "quiet oak loop" }))));
     expect(found.results.map((x: { id: string }) => x.id)).toContain(added.id);
     const del = await callTool(() => deleteHikeTool(ctx, { trail_id: added.id }));

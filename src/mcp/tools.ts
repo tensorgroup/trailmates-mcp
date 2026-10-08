@@ -77,7 +77,7 @@ function presentHit(h: SearchHit) {
 export async function searchHikesTool(ctx: ToolContext, rawArgs: unknown) {
   requireScope(ctx.scopes, "mcp:read"); // the OAuth provider advertises scopes but does not enforce them
   const a = z.object(searchHikesShape).parse(rawArgs);
-  const hits = await searchHikes(ctx.deps, ctx.userId, {
+  const { hits, hiddenClosed } = await searchHikes(ctx.deps, ctx.userId, {
     query: a.query,
     maxDistanceMi: a.max_distance,
     maxGainFt: a.max_gain,
@@ -86,7 +86,11 @@ export async function searchHikesTool(ctx: ToolContext, rawArgs: unknown) {
     date: a.date,
     limit: a.limit,
   });
-  return { count: hits.length, results: hits.map(presentHit) };
+  const note =
+    hiddenClosed > 0 && a.include_closed !== true
+      ? `${hiddenClosed} closed trail(s) matched but are hidden. Call again with include_closed set to true to see them and their closed_through dates.`
+      : undefined;
+  return { count: hits.length, results: hits.map(presentHit), hidden_closed: hiddenClosed, ...(note ? { note } : {}) };
 }
 
 export async function addHikeTool(ctx: ToolContext, rawArgs: unknown) {

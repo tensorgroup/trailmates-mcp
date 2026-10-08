@@ -72,7 +72,7 @@ export async function addHike(
   try {
     await indexTrail(deps, trail);
     await deps.repo.setIndexState(id, "indexed", deps.now());
-    return { id, indexState: "indexed", message: "Saved. It may take a few seconds to appear in search." };
+    return { id, indexState: "indexed", message: "Saved. It usually appears in search within seconds, occasionally a minute or more; searching by its exact name works immediately." };
   } catch (err) {
     console.error("indexing failed", err instanceof Error ? err.message : "unknown error");
     await deps.repo.setIndexState(id, "failed", deps.now());

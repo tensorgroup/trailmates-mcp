@@ -33,7 +33,7 @@ export async function runEval(deps: Deps, cases: EvalCase[] = EVAL_CASES): Promi
   const vectors = cases.length > 0 ? await deps.embedder.embedMany(cases.map((c) => c.query.trim())) : [];
 
   for (const [i, c] of cases.entries()) {
-    const hits = await searchHikes(deps, EVAL_USER, { query: c.query, date: c.date, limit: FORBIDDEN_DEPTH, queryVector: vectors[i] });
+    const { hits } = await searchHikes(deps, EVAL_USER, { query: c.query, date: c.date, limit: FORBIDDEN_DEPTH, queryVector: vectors[i] });
     const allIds = hits.map((h) => h.trail.id);
     for (const bad of c.mustNotInclude ?? []) {
       if (allIds.includes(bad)) violations.push(`"${c.query}" returned forbidden ${bad}`);
