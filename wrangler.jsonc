@@ -6,9 +6,9 @@
   "compatibility_flags": ["nodejs_compat"],
   "ai": { "binding": "AI" },
   "d1_databases": [
-    { "binding": "DB", "database_name": "trailmates", "database_id": "FILL_IN_TASK_12", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "trailmates", "database_id": "84ba81e3-def7-4862-87f1-f0f0fe116cbb", "migrations_dir": "migrations" }
   ],
   "vectorize": [{ "binding": "VECTORIZE", "index_name": "trailmates" }],
-  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "FILL_IN_TASK_12" }],
-  "vars": { "PUBLIC_BASE_URL": "https://trailmates-mcp.FILL_IN_TASK_12.workers.dev" }
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "1bfdccb58bf643399f366efd5465f637" }],
+  "vars": { "PUBLIC_BASE_URL": "https://trailmates-mcp.billzajac.workers.dev" }
 }
