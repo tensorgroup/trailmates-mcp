@@ -10,5 +10,6 @@
   ],
   "vectorize": [{ "binding": "VECTORIZE", "index_name": "trailmates" }],
   "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "1bfdccb58bf643399f366efd5465f637" }],
-  "vars": { "PUBLIC_BASE_URL": "https://trailmates-mcp.billzajac.workers.dev" }
+  "routes": [{ "pattern": "trailmates.tensor.group", "custom_domain": true }],
+  "vars": { "PUBLIC_BASE_URL": "https://trailmates.tensor.group" }
 }
