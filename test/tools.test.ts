@@ -1,0 +1,108 @@
+import { env } from "cloudflare:test";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { TrailsRepo } from "../src/db/trails-repo";
+import { addHikeTool, callTool, deleteHikeTool, requireScope, resolveToolAuth, searchHikesTool, type ToolContext } from "../src/mcp/tools";
+import { UserError } from "../src/services/hikes";
+import { seedShared } from "../src/services/indexing";
+import { applySchema, clearTrails } from "./helpers/db";
+import { HashEmbedder, InMemoryVectorStore } from "./helpers/fakes";
+import { makeTrail } from "./helpers/fixtures";
+
+const db = (env as unknown as { DB: D1Database }).DB;
+let ctx: ToolContext;
+
+beforeAll(async () => applySchema(db));
+beforeEach(async () => {
+  await clearTrails(db);
+  const deps = { repo: new TrailsRepo(db), embedder: new HashEmbedder(), vectors: new InMemoryVectorStore(), now: () => new Date("2026-10-07T20:00:00Z") };
+  ctx = { deps, userId: "1", scopes: ["mcp:read", "mcp:write"] };
+  await seedShared(deps, [
+    makeTrail({ id: "seed:falls", name: "Hidden Falls", description: "Shady creek walk to a waterfall.", tags: ["waterfall"] }),
+    makeTrail({ id: "seed:eaton", name: "Eaton Canyon Falls", description: "Creek canyon waterfall.", status: "closed", closedUntil: "2027-12-31" }),
+  ]);
+});
+
+const text = (r: { content: { text: string }[] }) => r.content[0]!.text;
+
+describe("search_hikes tool", () => {
+  it("returns compact hits without leaking owner ids", async () => {
+    const r = await callTool(() => searchHikesTool(ctx, { query: "shady creek waterfall" }));
+    expect(r.isError).toBeUndefined();
+    const body = JSON.parse(text(r));
+    expect(body.results[0]).toMatchObject({ id: "seed:falls", name: "Hidden Falls", source: "shared", status: "available" });
+    expect(JSON.stringify(body)).not.toContain('"owner"');
+  });
+  it("reports closed trails with the reopening date when include_closed is true", async () => {
+    const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "creek canyon waterfall", include_closed: true }))));
+    expect(body.results.find((x: { id: string }) => x.id === "seed:eaton")).toMatchObject({ status: "closed", closed_through: "2027-12-31" });
+  });
+  it.each([
+    [{ query: "" }],
+    [{ query: "   " }],
+    [{ query: "x".repeat(501) }],
+    [{ query: "hike", max_distance: 0 }],
+    [{ query: "hike", max_distance: -1 }],
+    [{ query: "hike", max_distance: Number.NaN }],
+    [{ query: "hike", max_gain: -1 }],
+    [{ query: "hike", limit: 26 }],
+    [{ query: "hike", difficulty: "extreme" }],
+    [{ query: "hike", date: "2026-02-30" }],
+    [{ query: "hike", date: "10/07/2026" }],
+  ])("rejects invalid input %j with a clear error, not an exception", async (args) => {
+    const r = await callTool(() => searchHikesTool(ctx, args));
+    expect(r.isError).toBe(true);
+    expect(text(r)).toBeTruthy();
+  });
+});
+
+describe("add_hike / delete_hike tools", () => {
+  const args = { name: "Backyard Loop", area: "Altadena", trailhead: "Maple St", route_type: "loop", distance_mi: 2, difficulty: "easy", description: "Quiet oak loop." };
+  it("adds then deletes a private hike", async () => {
+    const added = JSON.parse(text(await callTool(() => addHikeTool(ctx, args))));
+    expect(added.index_state).toBe("indexed");
+    const found = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "quiet oak loop" }))));
+    expect(found.results.map((x: { id: string }) => x.id)).toContain(added.id);
+    const del = await callTool(() => deleteHikeTool(ctx, { trail_id: added.id }));
+    expect(del.isError).toBeUndefined();
+  });
+  it("requires the mcp:write scope and leaves data untouched when refused", async () => {
+    const added = JSON.parse(text(await callTool(() => addHikeTool(ctx, args))));
+    const readOnly = { ...ctx, scopes: ["mcp:read"] };
+    expect((await callTool(() => addHikeTool(readOnly, { ...args, name: "Second" }))).isError).toBe(true);
+    const del = await callTool(() => deleteHikeTool(readOnly, { trail_id: added.id }));
+    expect(del.isError).toBe(true);
+    expect(text(del)).toMatch(/mcp:write/);
+    expect(await ctx.deps.repo.getVisible(added.id, "1")).not.toBeNull();
+    expect(await ctx.deps.repo.countOwned("1")).toBe(1);
+  });
+  it("requires mcp:read before touching any data", async () => {
+    const r = await callTool(() => searchHikesTool({ ...ctx, scopes: [] }, { query: "waterfall" }));
+    expect(r.isError).toBe(true);
+    expect(text(r)).toMatch(/mcp:read/);
+  });
+  it("turns unexpected errors into a generic message that leaks nothing", async () => {
+    const r = await callTool(async () => { throw new Error("secret-token-abc123 database exploded"); });
+    expect(r.isError).toBe(true);
+    expect(text(r)).not.toContain("secret-token");
+  });
+});
+
+describe("resolveToolAuth", () => {
+  it("reads the user id from props and prefers authInfo scopes, falling back to props.scopes", () => {
+    expect(resolveToolAuth({ userId: "7", scopes: ["mcp:read"] }, ["mcp:read", "mcp:write"])).toEqual({ userId: "7", scopes: ["mcp:read", "mcp:write"] });
+    expect(resolveToolAuth({ userId: "7", scopes: ["mcp:read"] }, undefined)).toEqual({ userId: "7", scopes: ["mcp:read"] });
+    expect(resolveToolAuth({ userId: "7" }, [])).toEqual({ userId: "7", scopes: [] });
+  });
+  it("rejects missing or non-string user ids", () => {
+    expect(() => resolveToolAuth(undefined, ["mcp:read"])).toThrow(UserError);
+    expect(() => resolveToolAuth({ userId: 7 }, ["mcp:read"])).toThrow(UserError);
+    expect(() => resolveToolAuth({ userId: "" }, ["mcp:read"])).toThrow(UserError);
+  });
+});
+
+describe("requireScope", () => {
+  it("passes when present and throws UserError when missing", () => {
+    expect(() => requireScope(["mcp:write"], "mcp:write")).not.toThrow();
+    expect(() => requireScope(["mcp:read"], "mcp:write")).toThrow(UserError);
+  });
+});
