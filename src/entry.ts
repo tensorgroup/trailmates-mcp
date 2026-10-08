@@ -11,9 +11,19 @@ import { createServer } from "./mcp/server";
 type McpFetch = ReturnType<typeof createMcpHandler>;
 let mcp: { env: Env; handler: McpFetch } | undefined;
 
+/**
+ * Hosts the MCP endpoint answers on. The handler only applies a Host check by default on localhost and
+ * workers.dev, so a custom domain needs it spelled out; matching ignores the port.
+ */
+export function mcpAllowedHostnames(env: Env): string[] {
+  return [new URL(env.PUBLIC_BASE_URL).hostname];
+}
+
 /** The server factory still runs per request; only the handler wrapper is reused. Keyed on env identity. */
 export function getMcpHandler(env: Env): McpFetch {
-  if (mcp?.env !== env) mcp = { env, handler: createMcpHandler(() => createServer(env)) };
+  if (mcp?.env !== env) {
+    mcp = { env, handler: createMcpHandler(() => createServer(env), { allowedHostnames: mcpAllowedHostnames(env) }) };
+  }
   return mcp.handler;
 }
 
