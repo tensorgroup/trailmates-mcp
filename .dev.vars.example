@@ -1,3 +1,5 @@
 GITHUB_CLIENT_ID=your-github-oauth-app-client-id
 GITHUB_CLIENT_SECRET=your-github-oauth-app-client-secret
 ADMIN_TOKEN=a-long-random-string
+# Local dev only: /mcp accepts requests for the hostname of PUBLIC_BASE_URL, so override it when running `wrangler dev`.
+PUBLIC_BASE_URL=http://localhost:8787
