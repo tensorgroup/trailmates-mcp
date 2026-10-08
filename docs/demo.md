@@ -1,8 +1,8 @@
 # Demo script
 
-Recording: not yet added.
+![Terminal demo of the five steps below](demo.gif)
 
-The demo recording is a terminal GIF at `docs/demo.gif`. Once the file is present it is embedded at the top of this page. Until then, this page is the script it follows: five prompts typed into Claude Code with the `trailmates` server connected.
+The recording above is a terminal-style GIF rendered from real responses: the five prompts below were run with `claude -p` against the live server (https://trailmates.tensor.group) from a signed-in session, and each answer on screen is the saved output of that run. Each real run took 7 to 12 seconds; the GIF is sped up. The demo hike was deleted at the end of the run (step 5). This page is the script it follows: five prompts typed into Claude Code with the `trailmates` server connected.
 
 Setup: connect the client (`claude mcp add --transport http trailmates <your-url>/mcp`), run `/mcp` in Claude Code and choose to authenticate, approve the consent page, then sign in with GitHub. Do not show tokens, and crop or blur the GitHub handle.
 
