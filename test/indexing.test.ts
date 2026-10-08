@@ -35,6 +35,14 @@ describe("reindexTrails", () => {
     const res = await reindexTrails({ ...deps, embedder: new FailingEmbedder() });
     expect(res).toEqual({ indexed: 0, failed: 2, remaining: 2 });
   });
+  it("marks the chunk failed when the embedder returns the wrong number of vectors", async () => {
+    await deps.repo.upsert(makeTrail({ id: "seed:a", name: "A" }));
+    await deps.repo.upsert(makeTrail({ id: "seed:b", name: "B" }));
+    const short = { embed: deps.embedder.embed.bind(deps.embedder), embedMany: async (t: string[]) => (await deps.embedder.embedMany(t)).slice(1) };
+    expect(await reindexTrails({ ...deps, embedder: short })).toEqual({ indexed: 0, failed: 2, remaining: 2 });
+    expect(vectors.records.size).toBe(0);
+    expect((await deps.repo.getVisible("seed:a", "1"))?.indexState).toBe("failed");
+  });
   it("works in bounded chunks and reports remaining", async () => {
     for (let i = 0; i < 5; i++) await deps.repo.upsert(makeTrail({ id: `seed:r${i}`, name: `R${i}` }));
     expect(await reindexTrails(deps, { limit: 2 })).toEqual({ indexed: 2, failed: 0, remaining: 3 });

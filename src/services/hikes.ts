@@ -36,7 +36,6 @@ export async function addHike(
 ): Promise<{ id: string; indexState: "indexed" | "failed"; message: string }> {
   if (userId === SHARED_OWNER) throw new UserError("not signed in");
   const id = await privateHikeId(userId, input.name, input.trailhead);
-  const existing = await deps.repo.getVisible(id, userId);
 
   const trail: Trail = {
     id,
@@ -62,8 +61,10 @@ export async function addHike(
     indexedAt: null,
   };
   // The cap is enforced inside the same SQL statement as the insert, so concurrent adds cannot exceed it.
+  // The id is derived from the owner, so an existing row is always the caller's own and updates in place:
+  // a false result can only mean a new row at the cap.
   if (!(await deps.repo.upsert(trail, { maxOwned: MAX_HIKES_PER_USER }))) {
-    throw new UserError(existing ? "could not save hike" : `hike limit reached (${MAX_HIKES_PER_USER}); delete one first`);
+    throw new UserError(`hike limit reached (${MAX_HIKES_PER_USER}); delete one first`);
   }
 
   try {

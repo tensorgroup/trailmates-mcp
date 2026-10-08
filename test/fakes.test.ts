@@ -29,6 +29,16 @@ describe("fakes", () => {
     expect(await ids({ owner: { $eq: "2" } })).toEqual(["theirs"]);
     await expect(ids({ owner: { $nope: 1 } })).rejects.toThrow(/unsupported/);
   });
+  it("rejects a non-array $in argument, like the real filter syntax", async () => {
+    const store = new InMemoryVectorStore();
+    await store.upsert([{ id: "mine", values: [1, 0], metadata: meta({ owner: "1" }) }]);
+    await expect(store.query([1, 0], { topK: 10, filter: { owner: { $in: "1" } } })).rejects.toThrow(/\$in/);
+  });
+  it("enforces Vectorize's topK limit of 100", async () => {
+    const store = new InMemoryVectorStore();
+    await expect(store.query([1, 0], { topK: 100, filter: {} })).resolves.toEqual([]);
+    await expect(store.query([1, 0], { topK: 101, filter: {} })).rejects.toThrow(/topK/);
+  });
   it("can fail one upsert on demand", async () => {
     const store = new InMemoryVectorStore();
     store.failNextUpsert();

@@ -7,6 +7,10 @@ const COLS = [
 ].join(", ");
 
 const UPDATABLE = COLS.split(", ").filter((c) => c !== "id" && c !== "owner");
+const PLACEHOLDERS = COLS.split(", ").map(() => "?").join(", ");
+const SET_UPDATABLE = UPDATABLE.map((c) => `${c} = excluded.${c}`).join(", ");
+// The WHERE makes an id owned by someone else a no-op instead of a takeover.
+const ON_CONFLICT = `ON CONFLICT(id) DO UPDATE SET ${SET_UPDATABLE} WHERE trails.owner = excluded.owner`;
 const CHUNK = 90; // D1 allows 100 bound parameters; we also bind the owner
 const BATCH = 50; // statements per db.batch() call
 
@@ -47,6 +51,15 @@ function toValues(t: Trail): unknown[] {
   ];
 }
 
+/**
+ * D1 access for trails. Authorization rules callers must keep:
+ * - `upsert` / `upsertMany` write `t.owner` as given: set it from the verified token (or SHARED_OWNER
+ *   for the seed), never from tool input.
+ * - Reads are scoped to `owner IN ('shared', userId)`; `deleteOwned` only touches the caller's rows.
+ * - `setIndexState`, `setIndexStateMany`, `listForReindex` and `markAllPending` are intentionally
+ *   unscoped (indexing bookkeeping) and must never receive user-supplied ids.
+ * - `getVisibleByIds` neither preserves the input order nor dedupes; callers re-order by their own ids.
+ */
 export class TrailsRepo {
   constructor(private readonly db: D1Database) {}
 
@@ -61,17 +74,14 @@ export class TrailsRepo {
   }
 
   private upsertStatement(t: Trail, opts: { maxOwned?: number } = {}): D1PreparedStatement {
-    const placeholders = COLS.split(", ").map(() => "?").join(", ");
-    const set = UPDATABLE.map((c) => `${c} = excluded.${c}`).join(", ");
-    const conflict = `ON CONFLICT(id) DO UPDATE SET ${set} WHERE trails.owner = excluded.owner`;
     if (opts.maxOwned === undefined) {
-      return this.db.prepare(`INSERT INTO trails (${COLS}) VALUES (${placeholders}) ${conflict}`).bind(...toValues(t));
+      return this.db.prepare(`INSERT INTO trails (${COLS}) VALUES (${PLACEHOLDERS}) ${ON_CONFLICT}`).bind(...toValues(t));
     }
     return this.db
       .prepare(
-        `INSERT INTO trails (${COLS}) SELECT ${placeholders}
+        `INSERT INTO trails (${COLS}) SELECT ${PLACEHOLDERS}
          WHERE (SELECT COUNT(*) FROM trails WHERE owner = ?) < ? OR EXISTS (SELECT 1 FROM trails WHERE id = ?)
-         ${conflict}`,
+         ${ON_CONFLICT}`,
       )
       .bind(...toValues(t), t.owner, opts.maxOwned, t.id);
   }

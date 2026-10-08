@@ -63,11 +63,26 @@ describe("addHike", () => {
     const res = await addHike(deps, "1", addHikeSchema.parse(valid));
     expect(res.indexState).toBe("failed");
   });
+  it("saves without a separate pre-read of the row (one fewer D1 call)", async () => {
+    const repo = deps.repo;
+    const noPreRead = new Proxy(repo, {
+      get: (target, p, receiver) => {
+        if (p === "getVisible") throw new Error("addHike must not pre-read the row");
+        const v = Reflect.get(target, p, receiver);
+        return typeof v === "function" ? v.bind(target) : v;
+      },
+    });
+    const res = await addHike({ ...deps, repo: noPreRead }, "1", addHikeSchema.parse(valid));
+    expect(res.indexState).toBe("indexed");
+    expect(await repo.countOwned("1")).toBe(1);
+  });
   it("enforces the per-user cap", async () => {
     for (let i = 0; i < MAX_HIKES_PER_USER; i++) {
       await addHike(deps, "1", addHikeSchema.parse({ ...valid, name: `Hike ${i}` }));
     }
-    await expect(addHike(deps, "1", addHikeSchema.parse({ ...valid, name: "One too many" }))).rejects.toThrow(UserError);
+    const over = addHike(deps, "1", addHikeSchema.parse({ ...valid, name: "One too many" }));
+    await expect(over).rejects.toThrow(UserError);
+    await expect(over).rejects.toThrow(`hike limit reached (${MAX_HIKES_PER_USER}); delete one first`);
     // updating an existing hike at the cap is still allowed
     await expect(addHike(deps, "1", addHikeSchema.parse({ ...valid, name: "Hike 0" }))).resolves.toBeDefined();
   }, 60_000);

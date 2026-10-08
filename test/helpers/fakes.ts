@@ -43,7 +43,10 @@ function matches(meta: Record<string, unknown>, filter: Record<string, unknown>)
     }
     for (const [op, arg] of Object.entries(cond as Record<string, unknown>)) {
       if (op === "$eq") { if (v !== arg) return false; }
-      else if (op === "$in") { if (!(arg as unknown[]).includes(v)) return false; }
+      else if (op === "$in") {
+        if (!Array.isArray(arg)) throw new Error("fake vector store: $in needs an array");
+        if (!arg.includes(v)) return false;
+      }
       else if (op === "$lte") { if (typeof v !== "number" || v > (arg as number)) return false; }
       else throw new Error(`fake vector store: unsupported operator ${op}`);
     }
@@ -72,6 +75,8 @@ export class InMemoryVectorStore implements VectorStore {
   }
 
   async query(values: number[], opts: { topK: number; filter: Record<string, unknown> }) {
+    // Real Vectorize caps topK at 100 when metadata is not returned (search never returns it).
+    if (opts.topK > 100) throw new Error(`fake vector store: topK ${opts.topK} exceeds Vectorize's limit of 100`);
     const scored = [...this.records.values()]
       .filter((r) => matches(r.metadata as unknown as Record<string, unknown>, opts.filter))
       .map((r) => ({ id: r.id, score: r.values.reduce((s, x, i) => s + x * (values[i] ?? 0), 0) }));
