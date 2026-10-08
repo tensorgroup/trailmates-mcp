@@ -1,39 +1,37 @@
 # Demo script
 
-Recording: not yet added. This page is the script for a 60 to 90 second screen recording of Trailmates MCP in an MCP client. The maintainer will add the video link here once it is recorded.
+Recording: not yet added.
 
-Setup: connect the client to the server (`claude mcp add --transport http trailmates <your-url>/mcp`), then run `/mcp` in Claude Code and choose to authenticate. Do not show tokens, and crop or blur the GitHub handle on the consent page.
+The demo recording is a terminal GIF at `docs/demo.gif`. Once the file is present it is embedded at the top of this page. Until then, this page is the script it follows: five prompts typed into Claude Code with the `trailmates` server connected.
 
-## 1. Sign in (about 10 s)
+Setup: connect the client (`claude mcp add --transport http trailmates <your-url>/mcp`), run `/mcp` in Claude Code and choose to authenticate, approve the consent page, then sign in with GitHub. Do not show tokens, and crop or blur the GitHub handle.
 
-Show the per-client consent page (it names the client and the permissions it asks for), approve, then GitHub sign-in. Back in the client the `trailmates` server shows as connected.
+## 1. Search by meaning
 
-## 2. Search with Eaton hidden (about 15 s)
+> Find me a shaded creek walk with a waterfall. Keep it to 4 short bullets with the status and address.
 
-> What waterfalls can I hike near Pasadena and Malibu? Shaded if possible.
+Expected: `search_hikes` returns open or verify trails with their approximate trailhead addresses. Waterfall and creek trails such as Solstice Canyon and Escondido Falls come back with status `verify` (unconfirmed in the seed). The closed Eaton Canyon entrances and Millard Falls are not listed. The response carries `hidden_closed` with the number of closed trails that were left out, plus a note saying how to see them.
 
-Expected: `search_hikes` returns waterfall trails such as Solstice Canyon and Escondido Falls, each with a verify flag (status unconfirmed in the seed). The two Eaton Canyon entrances and Millard Falls do not appear, because they are closed.
+## 2. Ask for closed trails
 
-## 3. Include closed trails (about 15 s)
+> Search for Eaton Canyon waterfall hikes, including closed trails. Keep it to 3 short bullets with the status and the date it is closed through.
 
-> Same search, but include closed trails.
+Expected: `search_hikes` is called with `include_closed` set to true. The two Eaton Canyon entrances (and Millard Falls) come back with status `closed` and `closed_through` of 2027-12-31, and `hidden_closed` is 0.
 
-Expected: with `include_closed` true, Eaton Canyon appears with status `closed` and `closed_through` of 2027-12-31.
+## 3. Add a private hike
 
-## 4. Add a private hike (about 15 s)
+> Add a private hike called Demo Loop in Altadena: a 1.5 mile easy loop starting at the end of Maple St (Maple St, Altadena, CA 91001), tags sunny and friendly, described as 'A sweet little demo loop.' Reply in one short line.
 
-> Add a private hike called "Backyard Test Loop" in Altadena: trailhead at the end of my street, a 1.5 mile loop, easy, about 100 ft of gain, tags quiet and shaded, description "Short shaded loop I walk after work."
+Expected: `add_hike` returns an id starting with `u:` and the message "Saved. It usually appears in search within seconds, occasionally a minute or more; searching by its exact name works immediately."
 
-Expected: `add_hike` returns an id starting with `u:` and a message that it may take a few seconds to appear in search.
+## 4. Find it by name
 
-## 5. Find it (about 15 s)
+> Find my hike called Demo Loop. Reply in one short line.
 
-> Search my hikes for a short quiet shaded loop after work.
+Expected: `search_hikes` with the query "Demo Loop" returns the hike first, with source `private`, flagged as an exact name match. The exact-name lookup reads D1 directly, so it works even before the hike's embedding is searchable.
 
-Expected: the new hike appears with source `private`. Indexing is asynchronous, so if it is missing, wait a few seconds and ask again.
+## 5. Delete it
 
-## 6. Delete it (about 10 s)
+> Delete my Demo Loop hike. Reply in one short line.
 
-> Delete that hike.
-
-Expected: `delete_hike` replies with JSON containing the hike id and `"message": "Deleted."` and a repeat of the search no longer returns it.
+Expected: `delete_hike` is called with the hike's id and replies with that id and `"message": "Deleted."`. A repeat search for "Demo Loop" no longer returns it.
