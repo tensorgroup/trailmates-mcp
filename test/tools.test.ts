@@ -42,6 +42,10 @@ describe("search_hikes tool", () => {
     expect(body.results[0]).toMatchObject({ id: "seed:falls", name: "Hidden Falls", source: "shared", status: "available" });
     expect(JSON.stringify(body)).not.toContain('"owner"');
   });
+  it("returns address as null for hikes that have none", async () => {
+    const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "shady creek waterfall" }))));
+    expect(body.results[0]).toHaveProperty("address", null);
+  });
   it("reports closed trails with the reopening date when include_closed is true", async () => {
     const body = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "creek canyon waterfall", include_closed: true }))));
     expect(body.results.find((x: { id: string }) => x.id === "seed:eaton")).toMatchObject({ status: "closed", closed_through: "2027-12-31" });
@@ -74,6 +78,20 @@ describe("add_hike / delete_hike tools", () => {
     expect(found.results.map((x: { id: string }) => x.id)).toContain(added.id);
     const del = await callTool(() => deleteHikeTool(ctx, { trail_id: added.id }));
     expect(del.isError).toBeUndefined();
+  });
+  it("stores an optional trimmed address and returns it from search", async () => {
+    const added = JSON.parse(text(await callTool(() => addHikeTool(ctx, { ...args, address: "  12 Maple St, Altadena, CA  " }))));
+    const found = JSON.parse(text(await callTool(() => searchHikesTool(ctx, { query: "quiet oak loop" }))));
+    expect(found.results.find((x: { id: string }) => x.id === added.id)).toMatchObject({ address: "12 Maple St, Altadena, CA" });
+  });
+  it("saves a hike without an address as address null", async () => {
+    const added = JSON.parse(text(await callTool(() => addHikeTool(ctx, args))));
+    expect((await ctx.deps.repo.getVisible(added.id, "1"))?.address).toBeNull();
+  });
+  it.each([["x".repeat(201)], ["   "]])("rejects an invalid address %j before touching any data", async (address) => {
+    const r = await callTool(() => addHikeTool(untouchable(), { ...args, address }));
+    expect(r.isError).toBe(true);
+    expect(text(r)).toMatch(/^invalid input/);
   });
   it("requires the mcp:write scope and leaves data untouched when refused", async () => {
     const added = JSON.parse(text(await callTool(() => addHikeTool(ctx, args))));

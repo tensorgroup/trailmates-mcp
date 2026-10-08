@@ -19,6 +19,13 @@ describe("TrailsRepo visibility", () => {
     expect(await repo.upsert(t)).toBe(true);
     expect(await repo.getVisible("seed:a", "42")).toEqual(t);
   });
+  it("round-trips a trailhead address and keeps null when there is none", async () => {
+    const t = makeTrail({ id: "seed:addr", address: "1750 N Altadena Dr, Pasadena, CA 91107" });
+    await repo.upsert(t);
+    expect(await repo.getVisible("seed:addr", "1")).toEqual(t);
+    await repo.upsert(makeTrail({ id: "seed:none" }));
+    expect((await repo.getVisible("seed:none", "1"))?.address).toBeNull();
+  });
   it("shows shared trails to everyone and private trails only to their owner", async () => {
     await repo.upsert(makeTrail({ id: "seed:s", owner: "shared" }));
     await repo.upsert(makeTrail({ id: "u:a", owner: "1" }));
@@ -51,6 +58,13 @@ describe("TrailsRepo writes", () => {
     await repo.upsert(makeTrail({ id: "u:x", owner: "1", name: "Mine" }));
     expect(await repo.upsert(makeTrail({ id: "u:x", owner: "2", name: "Hijack" }))).toBe(false);
     expect((await repo.getVisible("u:x", "1"))?.name).toBe("Mine");
+  });
+  it("updates the address on upsert, including through the capped insert", async () => {
+    await repo.upsert(makeTrail({ id: "u:a", owner: "1", address: "Old St" }));
+    await repo.upsert(makeTrail({ id: "u:a", owner: "1", address: "New St" }));
+    expect((await repo.getVisible("u:a", "1"))?.address).toBe("New St");
+    expect(await repo.upsert(makeTrail({ id: "u:a", owner: "1", address: null }), { maxOwned: 5 })).toBe(true);
+    expect((await repo.getVisible("u:a", "1"))?.address).toBeNull();
   });
   it("deleteOwned deletes only the caller's own rows and never shared rows", async () => {
     await repo.upsert(makeTrail({ id: "seed:s", owner: "shared" }));

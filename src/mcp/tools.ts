@@ -56,6 +56,7 @@ function presentHit(h: SearchHit) {
     name: t.name,
     area: t.area,
     trailhead: t.trailhead,
+    address: t.address,
     route_type: t.routeType,
     distance_mi: [t.distanceMinMi, t.distanceMaxMi],
     gain_ft: t.gainMinFt === null || t.gainMaxFt === null ? null : [t.gainMinFt, t.gainMaxFt],

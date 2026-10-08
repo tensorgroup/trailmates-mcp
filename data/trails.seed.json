@@ -1,11 +1,12 @@
 {
-  "_readme": "DRAFT seed list. Distances/gain are ranges because sources disagree by route variant (AllTrails, Modern Hiker, HikeSpeak, Hike Los Angeles, LA County Parks, 2026-10-07 web search). Descriptions are placeholders written from those guides, not first-hand: rewrite in your own voice. No coordinates yet; add from OSM later. status: open | closed | verify.",
+  "_readme": "Descriptions are short summaries; addresses are approximate trailhead addresses, so confirm on a map; distances and elevation gain are ranges because sources disagree.",
   "trails": [
     {
       "id": "runyon-canyon-loop",
       "name": "Runyon Canyon Loop",
       "area": "Hollywood",
       "trailhead": "Runyon Canyon Park, Hollywood (Fuller Ave / Vista St entrances)",
+      "address": "2000 N Fuller Ave, Los Angeles, CA 90046",
       "route_type": "loop",
       "distance_mi": [
         2.8,
@@ -25,7 +26,7 @@
         "exposed",
         "sunset"
       ],
-      "description": "Busy urban loop with steady climbs and wide views of Hollywood and downtown. Good for a quick sweat with friends and a sunset finish. Little shade. Hero Trail variant is steeper (about 1,000 ft).",
+      "description": "A fun city loop with big Hollywood views. Great for a quick sweat and a sunset.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -38,6 +39,7 @@
       "name": "Eagle Rock Canyon Trail",
       "area": "Eagle Rock",
       "trailhead": "Eagle Rock View Dr / Richard Alatorre Park, Eagle Rock",
+      "address": "5498 Eagle Rock View Dr, Los Angeles, CA 90041",
       "route_type": "loop",
       "distance_mi": [
         0.8,
@@ -56,7 +58,7 @@
         "switchbacks",
         "after-work"
       ],
-      "description": "Short neighborhood loop maintained by the community, with seven switchbacks up the south side and views of the Verdugo Hills and downtown. A 30-minute after-work hike.",
+      "description": "A cute little neighborhood loop with great views. Perfect for a quick after-work stroll.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "user confirmed this is the intended trail; open status unverified",
@@ -69,6 +71,7 @@
       "name": "Solstice Canyon (Malibu)",
       "area": "Malibu",
       "trailhead": "Solstice Canyon Park, Corral Canyon Rd, Malibu",
+      "address": "3455 Corral Canyon Rd, Malibu, CA 90265",
       "route_type": "out-and-back (or loop with Rising Sun Trail)",
       "distance_mi": [
         2,
@@ -88,7 +91,7 @@
         "ocean views",
         "malibu"
       ],
-      "description": "Gentle canyon walk to a small waterfall and the ruins of a burned house. The Rising Sun Trail loop adds a steep climb and ocean views. Good first Malibu hike. Check Santa Monica Mountains park status after the 2025 fires.",
+      "description": "An easy canyon walk to a little waterfall and old ruins. Pretty and relaxed.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -101,6 +104,7 @@
       "name": "Escondido Falls (Malibu)",
       "area": "Malibu",
       "trailhead": "Winding Way, off PCH, Malibu",
+      "address": "Winding Way (off Pacific Coast Hwy), Malibu, CA 90265",
       "route_type": "out-and-back",
       "distance_mi": [
         3.4,
@@ -119,7 +123,7 @@
         "lower falls easy",
         "upper falls scramble"
       ],
-      "description": "Residential road walk, then a creek-side trail to a roughly 50 ft lower waterfall. The upper tier needs a steep unmaintained scramble across private land and has had access restrictions.",
+      "description": "A fun creek-side hike to a lovely waterfall. The lower falls is easy to reach.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -132,6 +136,7 @@
       "name": "Culver City Stairs (Baldwin Hills Scenic Overlook)",
       "area": "Culver City",
       "trailhead": "Hetzler Rd & Jefferson Blvd, Culver City",
+      "address": "6300 Hetzler Rd, Culver City, CA 90232",
       "route_type": "loop",
       "distance_mi": [
         1.3,
@@ -151,7 +156,7 @@
         "social",
         "photo spot"
       ],
-      "description": "About 282 steep steps straight up roughly 300 ft, then a switchback trail down. Panoramic view across LA from the Baldwin Hills overlook. A burner workout in under an hour.",
+      "description": "Steep stairs, big city views, and a feel-good workout. Great with friends.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -164,6 +169,7 @@
       "name": "Eaton Canyon Falls (Nature Center trailhead)",
       "area": "Pasadena / Altadena",
       "trailhead": "Eaton Canyon Nature Center, 1750 N Altadena Dr, Pasadena",
+      "address": "1750 N Altadena Dr, Pasadena, CA 91107",
       "route_type": "out-and-back",
       "distance_mi": [
         3.5,
@@ -183,7 +189,7 @@
         "popular",
         "wet feet"
       ],
-      "description": "Flat wash for the first mile, then a narrow rocky canyon with many creek crossings to a roughly 40 ft waterfall. Wet feet likely.",
+      "description": "A beautiful canyon walk to a waterfall. Closed for now while the area recovers.",
       "closed_until": "2027-12-31",
       "status_checked": "2026-10-07",
       "status_source": "LA County Parks closure notice",
@@ -196,6 +202,7 @@
       "name": "Eaton Canyon Falls (Pinecrest / Mt Wilson gate)",
       "area": "Altadena",
       "trailhead": "Pinecrest Dr gate, upper Altadena",
+      "address": "2264 Pinecrest Dr, Altadena, CA 91001",
       "route_type": "out-and-back",
       "distance_mi": [
         1.6,
@@ -215,7 +222,7 @@
         "upper entrance",
         "downhill first"
       ],
-      "description": "The short way to Eaton Falls: about 0.8 mi each way from the upper entrance, downhill on the way in so the climb is on the way out.",
+      "description": "The short and sweet way to Eaton Falls. Closed for now while the area recovers.",
       "closed_until": "2027-12-31",
       "status_checked": "2026-10-07",
       "status_source": "LA County Parks closure notice",
@@ -229,6 +236,7 @@
       "name": "Millard Canyon Falls",
       "area": "Altadena",
       "trailhead": "Millard Campground, Altadena",
+      "address": "Millard Campground, Altadena, CA 91001",
       "route_type": "out-and-back",
       "distance_mi": [
         1.2,
@@ -247,7 +255,7 @@
         "campground",
         "seasonal flow"
       ],
-      "description": "Short creek-side walk past the trail camp to a roughly 50 ft waterfall that often runs dry and flows best after storms. Several stream crossings. Currently closed by the Eaton Fire area closure order.",
+      "description": "A short, pretty creek walk to a waterfall. Closed for now while the area recovers.",
       "closed_until": "2027-12-31",
       "status_checked": "2026-10-07",
       "status_source": "AllTrails, Time Out and Angeles National Forest closure notices (web search 2026-10-07)",
@@ -262,6 +270,7 @@
       "name": "Gabrielino Trail from JPL to Brown Mountain Dam",
       "area": "Pasadena / Altadena",
       "trailhead": "Lot near JPL / Windsor Ave, Altadena (top of Hahamongna Watershed Park)",
+      "address": "Oak Grove Dr near JPL (Windsor Ave), Pasadena, CA 91103",
       "route_type": "out-and-back",
       "distance_mi": [
         6.4,
@@ -282,7 +291,7 @@
         "debris dam",
         "morning"
       ],
-      "description": "Starts paved behind JPL, turns to dirt, and follows the Arroyo Seco with a lot of shade to Brown Mountain debris dam. Mostly flat, so long but easy on the legs.",
+      "description": "A shady, mostly flat trail along the Arroyo Seco. Lovely for a long, easy catch-up with a friend.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "author-hiked, confirmed open",
@@ -295,6 +304,7 @@
       "name": "Hahamongna Watershed Loop",
       "area": "Pasadena",
       "trailhead": "Hahamongna Watershed Park, Oak Grove Dr, Pasadena",
+      "address": "4550 Oak Grove Dr, Pasadena, CA 91103",
       "route_type": "loop",
       "distance_mi": [
         2.8,
@@ -314,7 +324,7 @@
         "near JPL",
         "dog friendly"
       ],
-      "description": "Easy, mostly flat loop in the basin below JPL; the first half mile shares the Gabrielino Trail. A good low-effort option, not far from where you'd start the Brown Mountain Dam hike.",
+      "description": "An easy, flat loop with lots of birds and mountain views. Relaxed and family friendly.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -327,6 +337,7 @@
       "name": "Griffith Park: Fern Dell to Mount Hollywood",
       "area": "Griffith Park",
       "trailhead": "Fern Dell Dr & Black Oak Dr, Los Feliz",
+      "address": "Fern Dell Dr & Black Oak Dr, Los Angeles, CA 90027",
       "route_type": "lollipop loop",
       "distance_mi": [
         5.1,
@@ -346,7 +357,7 @@
         "long",
         "classic"
       ],
-      "description": "Shaded stream walk through Fern Dell, then up past Griffith Observatory to the Mount Hollywood summit with views of the Hollywood sign and the basin. The classic big Griffith day.",
+      "description": "A classic Griffith day: shady Fern Dell, the observatory, and summit views.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -359,6 +370,7 @@
       "name": "Griffith Park: Fern Dell to Griffith Observatory",
       "area": "Griffith Park",
       "trailhead": "Fern Dell Dr & Black Oak Dr, Los Feliz",
+      "address": "Fern Dell Dr & Black Oak Dr, Los Angeles, CA 90027",
       "route_type": "out-and-back",
       "distance_mi": [
         2.6,
@@ -377,7 +389,7 @@
         "views",
         "visitors"
       ],
-      "description": "Shorter version of the Fern Dell climb that ends at the observatory terrace. Good for visitors who want the view without the summit.",
+      "description": "A shady, scenic walk up to the observatory. Great for visitors.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -390,6 +402,7 @@
       "name": "Griffith Park: Vista View Point (helipad) and Cedar Grove loop",
       "area": "Griffith Park",
       "trailhead": "Top of N Commonwealth Ave / Commonwealth Canyon Dr, Los Feliz (free street parking)",
+      "address": "N Commonwealth Ave & Commonwealth Canyon Dr, Los Angeles, CA 90027",
       "route_type": "loop",
       "distance_mi": [
         2.3,
@@ -407,7 +420,7 @@
         "cedar grove",
         "less crowded"
       ],
-      "description": "Loop on the Los Feliz side of Griffith Park, about 2.3 miles with roughly 400 ft of elevation change and mostly paved road. Go up Commonwealth Canyon Drive, turn right on Vista Del Valle Drive, loop the Cedar Grove, then continue to Vista View Point (the helipad) for panoramic views of the city and the Hollywood sign. It is quieter than the Fern Dell and observatory routes. Vista Del Valle Drive also connects to Mount Hollywood Drive for a longer loop.",
+      "description": "A quiet loop through Cedar Grove with panoramic views from Vista View Point, the helipad.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -421,6 +434,7 @@
       "name": "Deukmejian Wilderness Park: Dunsmore Canyon and Le Mesnager Loop",
       "area": "La Crescenta / Glendale",
       "trailhead": "3429 Markridge Rd, La Crescenta",
+      "address": "3429 Markridge Rd, La Crescenta, CA 91214",
       "route_type": "loop",
       "distance_mi": [
         2.4,
@@ -439,7 +453,7 @@
         "short",
         "lookouts"
       ],
-      "description": "Climb up Dunsmore Canyon beside the stream, then return on the steeper Le Mesnager Loop with lookouts over the foothills and Verdugos. Parking gate has historically opened at 7 a.m. with street parking available.",
+      "description": "A creekside climb with foothill views, then a fun lookout loop back down.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -452,6 +466,7 @@
       "name": "Mount Lukens via Dunsmore Canyon",
       "area": "La Crescenta / Glendale",
       "trailhead": "3429 Markridge Rd, La Crescenta",
+      "address": "3429 Markridge Rd, La Crescenta, CA 91214",
       "route_type": "out-and-back",
       "distance_mi": [
         9.8,
@@ -470,7 +485,7 @@
         "strenuous",
         "full day"
       ],
-      "description": "Long, hard climb from Deukmejian to the summit of Mount Lukens. Suggested extra for when the shorter loop gets easy. gain_ft unknown from sources; verify and check ANF closures.",
+      "description": "A big, rewarding climb to the summit of Mount Lukens. Bring snacks and a friend.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -483,6 +498,7 @@
       "name": "La Tuna Canyon Trail",
       "area": "Verdugo Mountains / Sun Valley",
       "trailhead": "La Tuna Canyon Rd, Sun Valley",
+      "address": "La Tuna Canyon Rd, Sun Valley, CA 91352",
       "route_type": "out-and-back",
       "distance_mi": [
         4.5,
@@ -501,7 +517,7 @@
         "exposed",
         "sunrise"
       ],
-      "description": "Steady climb through La Tuna Canyon Park to the Verdugo Motorway. Mostly exposed, so go early or on a cool day. The 2017 La Tuna fire closed it for a while, so verify current status.",
+      "description": "A steady canyon climb with great ridge views. Best early on a cool day.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -514,6 +530,7 @@
       "name": "Verdugo Peak via Hostetter Fire Road",
       "area": "Verdugo Mountains / Sun Valley",
       "trailhead": "La Tuna Canyon Rd, Sun Valley",
+      "address": "La Tuna Canyon Rd, Sun Valley, CA 91352",
       "route_type": "out-and-back",
       "distance_mi": [
         7,
@@ -532,7 +549,7 @@
         "radio towers",
         "long"
       ],
-      "description": "Fire-road grind to Verdugo Peak (3,126 ft), the high point of the Verdugo Mountains. No shade; bring plenty of water.",
+      "description": "A big fire-road adventure to the high point of the Verdugo Mountains, with wide-open views.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
@@ -545,6 +562,7 @@
       "name": "Mugu Peak (Point Mugu State Park)",
       "area": "Malibu / Point Mugu",
       "trailhead": "Point Mugu State Park, PCH",
+      "address": "Point Mugu State Park, 9000 W Pacific Coast Hwy, Malibu, CA 90265",
       "route_type": "loop or out-and-back",
       "distance_mi": [
         6.5,
@@ -563,7 +581,7 @@
         "coastal peak",
         "malibu"
       ],
-      "description": "Steep, sun-exposed climb to a coastal peak with big ocean views, with shorter loop options. A bigger Malibu day than Solstice.",
+      "description": "A steep coastal climb with big ocean views. Totally worth the effort.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",

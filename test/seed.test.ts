@@ -16,6 +16,19 @@ describe("normalizeSeed", () => {
       expect(t.id.length).toBeLessThanOrEqual(64);
     }
   });
+  it("gives every seed trail a trailhead address", () => {
+    for (const t of trails) {
+      expect(t.address, t.id).toBeTruthy();
+      expect(t.address!.length, t.id).toBeLessThanOrEqual(200);
+    }
+  });
+  it("keeps descriptions short", () => {
+    for (const t of trails) expect(t.description.length, t.id).toBeLessThanOrEqual(200);
+  });
+  it("rejects a seed trail without an address", () => {
+    const { address: _omit, ...first } = seedJson.trails[0]!;
+    expect(() => normalizeSeed({ trails: [first] })).toThrow();
+  });
   it("has unique ids", () => {
     expect(new Set(trails.map((t) => t.id)).size).toBe(trails.length);
   });

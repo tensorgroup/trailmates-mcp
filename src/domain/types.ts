@@ -11,6 +11,7 @@ export interface Trail {
   name: string;
   area: string;
   trailhead: string;
+  address: string | null; // approximate trailhead street address
   routeType: string;
   distanceMinMi: number;
   distanceMaxMi: number;

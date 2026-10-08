@@ -7,6 +7,7 @@ export function makeTrail(overrides: Partial<Trail> = {}): Trail {
     name: "Test Trail",
     area: "Pasadena",
     trailhead: "Test trailhead",
+    address: null,
     routeType: "loop",
     distanceMinMi: 2,
     distanceMaxMi: 2.5,

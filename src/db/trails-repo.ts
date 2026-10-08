@@ -3,7 +3,7 @@ import { SHARED_OWNER, type Difficulty, type IndexState, type Status, type Trail
 const COLS = [
   "id", "owner", "name", "area", "trailhead", "route_type", "distance_min_mi", "distance_max_mi",
   "gain_min_ft", "gain_max_ft", "difficulty", "difficulty_note", "tags", "description", "status",
-  "closed_until", "status_note", "status_checked", "source_urls", "index_state", "indexed_at",
+  "closed_until", "status_note", "status_checked", "source_urls", "index_state", "indexed_at", "address",
 ].join(", ");
 
 const UPDATABLE = COLS.split(", ").filter((c) => c !== "id" && c !== "owner");
@@ -39,6 +39,7 @@ function fromRow(r: Row): Trail {
     sourceUrls: JSON.parse(r.source_urls as string) as string[],
     indexState: r.index_state as IndexState,
     indexedAt: (r.indexed_at as string | null) ?? null,
+    address: (r.address as string | null) ?? null,
   };
 }
 
@@ -47,7 +48,7 @@ function toValues(t: Trail): unknown[] {
     t.id, t.owner, t.name, t.area, t.trailhead, t.routeType, t.distanceMinMi, t.distanceMaxMi,
     t.gainMinFt, t.gainMaxFt, t.difficulty, t.difficultyNote, JSON.stringify(t.tags), t.description,
     t.status, t.closedUntil, t.statusNote, t.statusChecked, JSON.stringify(t.sourceUrls),
-    t.indexState, t.indexedAt,
+    t.indexState, t.indexedAt, t.address,
   ];
 }
 
