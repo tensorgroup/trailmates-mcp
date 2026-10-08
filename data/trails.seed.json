@@ -239,7 +239,7 @@
         370
       ],
       "difficulty": "easy to moderate",
-      "status": "verify",
+      "status": "closed",
       "tags": [
         "waterfall",
         "short",
@@ -247,13 +247,15 @@
         "campground",
         "seasonal flow"
       ],
-      "description": "Short creek-side walk past the trail camp to a roughly 50 ft waterfall that often runs dry and flows best after storms. Several stream crossings. Millard area was affected by the Eaton Fire; some sources mark it closed.",
-      "closed_until": null,
+      "description": "Short creek-side walk past the trail camp to a roughly 50 ft waterfall that often runs dry and flows best after storms. Several stream crossings. Currently closed by the Eaton Fire area closure order.",
+      "closed_until": "2027-12-31",
       "status_checked": "2026-10-07",
-      "status_source": "web search 2026-10-07 (unverified on the ground)",
+      "status_source": "AllTrails, Time Out and Angeles National Forest closure notices (web search 2026-10-07)",
       "source_urls": [
-        "https://www.theoutbound.com/los-angeles/hiking/hike-to-millard-falls"
-      ]
+        "https://www.theoutbound.com/los-angeles/hiking/hike-to-millard-falls",
+        "https://www.alltrails.com/trail/us/california/millard-canyon-falls-trail"
+      ],
+      "status_note": "Covered by the Angeles National Forest Eaton Fire area closure order through 2027-12-31 (campground fire damage; Chaney Trail road access closed). Verify with the Angeles National Forest before any visit."
     },
     {
       "id": "gabrielino-jpl-brown-mountain-dam",
@@ -387,15 +389,15 @@
       "id": "griffith-helipad-cedar-grove-loop",
       "name": "Griffith Park: Vista View Point (helipad) and Cedar Grove loop",
       "area": "Griffith Park",
-      "trailhead": "TBD: back-side road parking (road name to be added)",
+      "trailhead": "Top of N Commonwealth Ave / Commonwealth Canyon Dr, Los Feliz (free street parking)",
       "route_type": "loop",
       "distance_mi": [
         2.3,
         2.3
       ],
       "gain_ft": [
-        null,
-        null
+        400,
+        400
       ],
       "difficulty": "moderate",
       "status": "open",
@@ -405,13 +407,14 @@
         "cedar grove",
         "less crowded"
       ],
-      "description": "Loop on the back side of Griffith (most people park on the road that goes around the back, not at Fern Dell) that passes Cedar Grove and the helipad at Vista View Point for panoramic views. HikeSpeak lists it at 2.3 mi; no source found combining it with Fern Dell and Mount Hollywood, so your longer route needs a GPS track. gain_ft unknown.",
+      "description": "Loop on the Los Feliz side of Griffith Park, about 2.3 miles with roughly 400 ft of elevation change and mostly paved road. Go up Commonwealth Canyon Drive, turn right on Vista Del Valle Drive, loop the Cedar Grove, then continue to Vista View Point (the helipad) for panoramic views of the city and the Hollywood sign. It is quieter than the Fern Dell and observatory routes. Vista Del Valle Drive also connects to Mount Hollywood Drive for a longer loop.",
       "closed_until": null,
       "status_checked": "2026-10-07",
       "status_source": "web search 2026-10-07 (unverified on the ground)",
       "source_urls": [
         "https://www.hikespeak.com/los-angeles/griffith-park-hikes/"
-      ]
+      ],
+      "status_note": "Trailhead and elevation from HikeSpeak; confirm the start that matches your usual parking spot."
     },
     {
       "id": "deukmejian-dunsmore-le-mesnager-loop",

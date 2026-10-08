@@ -34,9 +34,15 @@ describe("normalizeSeed", () => {
     }
   });
   it("uses null for unknown gain", () => {
-    const helipad = byId.get("seed:griffith-helipad-cedar-grove-loop")!;
-    expect(helipad.gainMinFt).toBeNull();
-    expect(helipad.gainMaxFt).toBeNull();
+    const lukens = byId.get("seed:mount-lukens-via-deukmejian")!;
+    expect(lukens.gainMinFt).toBeNull();
+    expect(lukens.gainMaxFt).toBeNull();
+  });
+  it("keeps Millard Falls closed through the Eaton Fire area closure", () => {
+    const millard = byId.get("seed:millard-falls")!;
+    expect(millard.status).toBe("closed");
+    expect(millard.closedUntil).toBe("2027-12-31");
+    expect(millard.statusNote).toBeTruthy();
   });
   it("rejects malformed seed data", () => {
     expect(() => normalizeSeed({ trails: [{ id: "x" }] })).toThrow();
