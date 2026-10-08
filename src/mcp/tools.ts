@@ -3,6 +3,7 @@ import type { SearchHit } from "../services/search";
 import { searchHikes } from "../services/search";
 import { UserError, addHike, addHikeSchema, deleteHike } from "../services/hikes";
 import type { Deps } from "../services/deps";
+import { isoDate } from "../domain/iso-date";
 import { SHARED_OWNER } from "../domain/types";
 
 export interface ToolContext {
@@ -16,14 +17,6 @@ export type ToolResult = {
   content: { type: "text"; text: string }[];
   isError?: boolean;
 };
-
-const isoDate = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
-  .refine((s) => {
-    const t = Date.parse(s);
-    return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === s;
-  }, "must be a real calendar date");
 
 export const searchHikesShape = {
   query: z.string().trim().min(1).max(500),
@@ -41,7 +34,10 @@ export function requireScope(scopes: string[], scope: string): void {
   if (!scopes.includes(scope)) throw new UserError(`this action needs the ${scope} permission`);
 }
 
-/** Combines the verified token props with the SDK's authInfo scopes (props are the fallback). */
+/**
+ * Combines the verified token props with the SDK's authInfo scopes. Props are the fallback only when
+ * authInfo carries no scope list at all; an explicit empty list means no permissions.
+ */
 export function resolveToolAuth(
   props: Record<string, unknown> | undefined,
   authScopes: string[] | undefined,
@@ -50,7 +46,7 @@ export function resolveToolAuth(
   if (typeof userId !== "string" || userId === "") throw new UserError("not signed in");
   const propScopes = props?.scopes;
   const fromProps = Array.isArray(propScopes) ? propScopes.filter((x): x is string => typeof x === "string") : [];
-  return { userId, scopes: authScopes && authScopes.length > 0 ? authScopes : fromProps };
+  return { userId, scopes: authScopes !== undefined ? authScopes : fromProps };
 }
 
 function presentHit(h: SearchHit) {
@@ -113,7 +109,8 @@ export async function callTool(fn: () => Promise<unknown>): Promise<ToolResult> 
       const msg = err.issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; ");
       return { isError: true, content: [{ type: "text", text: `invalid input: ${msg}` }] };
     }
-    console.error("tool failed", err instanceof Error ? err.name : "unknown");
+    // Operators need the message to diagnose failures; the caller only ever sees the generic text.
+    console.error("tool failed", err instanceof Error ? `${err.name}: ${err.message}` : "unknown");
     return { isError: true, content: [{ type: "text", text: "internal error; please try again" }] };
   }
 }

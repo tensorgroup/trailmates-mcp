@@ -41,4 +41,10 @@ describe("normalizeSeed", () => {
   it("rejects malformed seed data", () => {
     expect(() => normalizeSeed({ trails: [{ id: "x" }] })).toThrow();
   });
+  it("rejects impossible calendar dates", () => {
+    const first = seedJson.trails[0]!;
+    expect(() => normalizeSeed({ trails: [{ ...first, status_checked: "2026-10-01" }] })).not.toThrow();
+    expect(() => normalizeSeed({ trails: [{ ...first, status_checked: "2026-02-30" }] })).toThrow(/real calendar date/);
+    expect(() => normalizeSeed({ trails: [{ ...first, status: "closed", closed_until: "2027-13-01" }] })).toThrow(/real calendar date/);
+  });
 });

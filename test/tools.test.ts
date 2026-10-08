@@ -24,6 +24,16 @@ beforeEach(async () => {
 
 const text = (r: { content: { text: string }[] }) => r.content[0]!.text;
 
+/** Throws on any use, so a test fails loudly if a code path touches the binding. */
+const forbidden = (name: string) =>
+  new Proxy({}, { get: (_t, p) => { throw new Error(`${name}.${String(p)} must not be used`); } });
+/** A context whose data bindings throw if touched; scopes are granted unless overridden. */
+const untouchable = (scopes: string[] = ["mcp:read", "mcp:write"]): ToolContext => ({
+  deps: { repo: forbidden("repo"), embedder: forbidden("embedder"), vectors: forbidden("vectors"), now: () => new Date("2026-10-07T20:00:00Z") } as unknown as ToolContext["deps"],
+  userId: "1",
+  scopes,
+});
+
 describe("search_hikes tool", () => {
   it("returns compact hits without leaking owner ids", async () => {
     const r = await callTool(() => searchHikesTool(ctx, { query: "shady creek waterfall" }));
@@ -48,10 +58,10 @@ describe("search_hikes tool", () => {
     [{ query: "hike", difficulty: "extreme" }],
     [{ query: "hike", date: "2026-02-30" }],
     [{ query: "hike", date: "10/07/2026" }],
-  ])("rejects invalid input %j with a clear error, not an exception", async (args) => {
-    const r = await callTool(() => searchHikesTool(ctx, args));
+  ])("rejects invalid input %j with a clear error before touching any data", async (args) => {
+    const r = await callTool(() => searchHikesTool(untouchable(), args));
     expect(r.isError).toBe(true);
-    expect(text(r)).toBeTruthy();
+    expect(text(r)).toMatch(/^invalid input/);
   });
 });
 
@@ -76,14 +86,27 @@ describe("add_hike / delete_hike tools", () => {
     expect(await ctx.deps.repo.countOwned("1")).toBe(1);
   });
   it("requires mcp:read before touching any data", async () => {
-    const r = await callTool(() => searchHikesTool({ ...ctx, scopes: [] }, { query: "waterfall" }));
+    const r = await callTool(() => searchHikesTool(untouchable([]), { query: "waterfall" }));
     expect(r.isError).toBe(true);
-    expect(text(r)).toMatch(/mcp:read/);
+    expect(text(r)).toMatch(/needs the mcp:read permission/);
   });
   it("turns unexpected errors into a generic message that leaks nothing", async () => {
     const r = await callTool(async () => { throw new Error("secret-token-abc123 database exploded"); });
     expect(r.isError).toBe(true);
     expect(text(r)).not.toContain("secret-token");
+  });
+  it("logs the error name and message for operators while the response stays generic", async () => {
+    const logged: unknown[][] = [];
+    const original = console.error;
+    console.error = (...a: unknown[]) => { logged.push(a); };
+    try {
+      const r = await callTool(async () => { throw new TypeError("binding DB went away"); });
+      expect(text(r)).toBe("internal error; please try again");
+      expect(text(r)).not.toContain("binding DB went away");
+    } finally {
+      console.error = original;
+    }
+    expect(logged).toEqual([["tool failed", "TypeError: binding DB went away"]]);
   });
 });
 
@@ -92,6 +115,9 @@ describe("resolveToolAuth", () => {
     expect(resolveToolAuth({ userId: "7", scopes: ["mcp:read"] }, ["mcp:read", "mcp:write"])).toEqual({ userId: "7", scopes: ["mcp:read", "mcp:write"] });
     expect(resolveToolAuth({ userId: "7", scopes: ["mcp:read"] }, undefined)).toEqual({ userId: "7", scopes: ["mcp:read"] });
     expect(resolveToolAuth({ userId: "7" }, [])).toEqual({ userId: "7", scopes: [] });
+  });
+  it("keeps an explicitly empty authInfo scope list empty even when props.scopes has values", () => {
+    expect(resolveToolAuth({ userId: "7", scopes: ["mcp:read", "mcp:write"] }, [])).toEqual({ userId: "7", scopes: [] });
   });
   it("rejects missing or non-string user ids", () => {
     expect(() => resolveToolAuth(undefined, ["mcp:read"])).toThrow(UserError);

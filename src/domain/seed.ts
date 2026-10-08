@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { isoDate } from "./iso-date";
 import { SHARED_OWNER, type Difficulty, type Trail } from "./types";
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const nullableNum = z.number().nonnegative().nullable();
 
 const SeedTrail = z.object({
