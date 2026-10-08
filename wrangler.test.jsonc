@@ -1,0 +1,7 @@
+{
+  "name": "trailmates-mcp-test",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [{ "binding": "DB", "database_name": "trailmates-test", "database_id": "test" }],
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "test" }]
+}

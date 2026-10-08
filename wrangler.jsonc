@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trailmates-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "ai": { "binding": "AI" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "trailmates", "database_id": "FILL_IN_TASK_12", "migrations_dir": "migrations" }
+  ],
+  "vectorize": [{ "binding": "VECTORIZE", "index_name": "trailmates" }],
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "FILL_IN_TASK_12" }],
+  "vars": { "PUBLIC_BASE_URL": "https://trailmates-mcp.FILL_IN_TASK_12.workers.dev" }
+}

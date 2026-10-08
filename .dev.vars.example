@@ -1,0 +1,3 @@
+GITHUB_CLIENT_ID=your-github-oauth-app-client-id
+GITHUB_CLIENT_SECRET=your-github-oauth-app-client-secret
+ADMIN_TOKEN=a-long-random-string
