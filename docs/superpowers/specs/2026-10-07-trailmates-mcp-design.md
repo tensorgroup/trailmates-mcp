@@ -5,8 +5,8 @@ Date: 2026-10-07 Â· Status: revised after design review, approved for planning Â
 ## Purpose
 
 A small open-source remote MCP server for finding local hikes by meaning ("shaded creek walk with a
-waterfall, under 3 miles") and planning outings with friends. Built in a weekend to put shipped MCP
-and vector-database work on the author's record (prep for a Caltech Enterprise AI role). The author
+waterfall, under 3 miles") and planning outings with friends. Built in a weekend as a working reference
+for remote MCP plus vector search, with the database as the authorization boundary. The author
 uses it for real: LA-area hikes (Pasadena, Altadena, Griffith, Malibu, Verdugos).
 
 ## Decisions made
