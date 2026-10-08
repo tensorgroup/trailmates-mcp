@@ -12,7 +12,7 @@ Show the per-client consent page (it names the client and the permissions it ask
 
 > What waterfalls can I hike near Pasadena and Malibu? Shaded if possible.
 
-Expected: `search_hikes` returns open waterfall trails such as Solstice Canyon and Escondido Falls. The two Eaton Canyon entrances do not appear, because they are closed.
+Expected: `search_hikes` returns waterfall trails such as Solstice Canyon and Escondido Falls, each with a verify flag (status unconfirmed in the seed). The two Eaton Canyon entrances and Millard Falls do not appear, because they are closed.
 
 ## 3. Include closed trails (about 15 s)
 
@@ -36,4 +36,4 @@ Expected: the new hike appears with source `private`. Indexing is asynchronous, 
 
 > Delete that hike.
 
-Expected: `delete_hike` replies "Deleted." and a repeat of the search no longer returns it.
+Expected: `delete_hike` replies with JSON containing the hike id and `"message": "Deleted."` and a repeat of the search no longer returns it.

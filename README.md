@@ -14,11 +14,11 @@ claude mcp add --transport http trailmates https://trailmates-mcp.billzajac.work
 
 Then authenticate from your client (in Claude Code, run `/mcp`). You will see a consent page for your client, then GitHub.
 
-Note that the hosted instance is for demonstration. Its GitHub OAuth app may not be configured yet, in which case sign-in will not work until the maintainer finishes that setup. Self-hosting ([Deploy your own](#deploy-your-own)) is the supported path. To see the flow without signing in, read the [demo script](docs/demo.md) (a recording has not been added yet).
+The hosted instance is for demonstration only. Its GitHub OAuth app is not configured yet, so sign-in does not work there yet. Self-hosting ([Deploy your own](#deploy-your-own)) is the supported path. To see the flow without signing in, read the [demo script](docs/demo.md) (a recording has not been added yet).
 
 Example prompts:
 
-- "What waterfalls are open to hike this weekend?" (Eaton Canyon is closed and is not suggested.)
+- "What waterfalls are open to hike this weekend?" (Waterfall trails such as Solstice Canyon and Escondido Falls come back with a verify flag, meaning their status is unconfirmed; Eaton Canyon is closed and is not suggested.)
 - "Same search, but include closed trails." (Eaton Canyon comes back, closed through 2027-12-31.)
 - "Add a private hike: Backyard Loop in Altadena, 1.5 miles, easy, quiet and shaded." Then ask for it by meaning, then delete it.
 
@@ -37,7 +37,7 @@ Cloudflare Worker (TypeScript)
  └─ D1                      ── trails (authorization boundary)
 ```
 
-A `search_hikes` call arrives with an OAuth token. The provider verifies it and hands the tool the signed-in user's GitHub numeric id. The query is embedded with Workers AI, and Vectorize is asked for nearby vectors, filtered to shared trails plus that user's and by any distance, gain, difficulty and closure constraints. The candidate ids are then loaded from D1 (scoped to shared trails and the caller), every constraint and the closure rules are re-applied in code, and the results are returned with their status.
+A `search_hikes` call arrives with an OAuth token. The provider verifies it and hands the tool the signed-in user's GitHub numeric id. The query is embedded with Workers AI, and Vectorize is asked for nearby vectors, filtered to shared trails plus that user's and by any distance, gain and difficulty constraints. Closure rules are not part of the vector filter. The candidate ids are then loaded from D1 (scoped to shared trails and the caller), every constraint is re-applied in code, the closure rules are applied, , and the results are returned with their status.
 
 D1 is the source of truth and the authorization boundary. Vectorize is only an index: its owner filter makes queries faster, but a vector id that is stale, injected or foreign still cannot return a row, because D1 will not hand out a private hike to anyone but its owner. Vectorize can be wiped and rebuilt from D1 at any time.
 
@@ -89,7 +89,7 @@ The fixtures in `src/eval/fixtures.ts` are frozen (add cases, do not edit them).
 
 - The owner of every request comes from the verified OAuth token (the GitHub numeric user id), never from tool arguments.
 - Every D1 read is scoped to shared trails plus the caller. A foreign id behaves exactly like a nonexistent one. The Vectorize owner filter is a performance filter only.
-- Scopes `mcp:read` and `mcp:write` are checked by each tool, because the OAuth provider advertises scopes but does not enforce them. Search needs read; add and delete need write.
+- Scopes `mcp:read` and `mcp:write` are checked by each tool, because the OAuth provider advertises the required scope but leaves enforcement to the application (per the provider's documentation), so each tool checks its own scope. Search needs read; add and delete need write.
 - Each user can hold at most 50 private hikes, enforced atomically inside the insert statement. Descriptions are capped at 2,000 characters.
 - Every MCP client registers dynamically, so each client gets its own consent page before the redirect to GitHub. The page sets anti-framing and no-cache headers.
 - The GitHub access token is used once, to read the user's id, and is not stored.
@@ -113,25 +113,25 @@ npx wrangler vectorize list-metadata-index trailmates
 
 Metadata indexes are created asynchronously, one at a time. Re-run the `list-metadata-index` command until all five are listed before you seed. Vectors upserted before an index exists are not indexed for filtering.
 
-**2. Create the database and apply the migration.**
+**2. Create the database and KV namespace.**
 
 ```bash
 npx wrangler d1 create trailmates
 npx wrangler kv namespace create OAUTH_KV
-npx wrangler d1 migrations apply trailmates --remote
 ```
 
-**3. Fill in `wrangler.jsonc` and deploy.** Put the D1 `database_id` and the KV `id` from the previous commands into `wrangler.jsonc`. Deploy once to learn your workers.dev URL, then set `PUBLIC_BASE_URL` in `wrangler.jsonc` to it and deploy again.
+**3. Edit `wrangler.jsonc` before anything else touches D1.** The committed `database_id` and KV `id` belong to the maintainer's Cloudflare account and must be replaced: put the `database_id` and the KV `id` printed by the commands above in their place. Set `PUBLIC_BASE_URL` to a placeholder such as `https://trailmates-mcp.example.workers.dev` for now. Then apply the migration, deploy once to learn your workers.dev URL, set `PUBLIC_BASE_URL` to the real URL, and deploy again:
 
 ```bash
+npx wrangler d1 migrations apply trailmates --remote
 npx wrangler deploy
-# edit PUBLIC_BASE_URL in wrangler.jsonc, then:
+# edit PUBLIC_BASE_URL in wrangler.jsonc to the URL printed above, then:
 npx wrangler deploy
 export PUBLIC_BASE_URL="https://trailmates-mcp.<your-subdomain>.workers.dev"
 curl -s "$PUBLIC_BASE_URL/healthz"   # ok
 ```
 
-**4. Create a GitHub OAuth app and set the secrets.** At github.com/settings/developers create an OAuth App with Homepage URL `PUBLIC_BASE_URL` and Authorization callback URL `<PUBLIC_BASE_URL>/callback`. Each command prompts for its value:
+**4. Create a GitHub OAuth app and set the secrets.** At github.com/settings/developers create an OAuth App with Homepage URL `<PUBLIC_BASE_URL>` and Authorization callback URL `<PUBLIC_BASE_URL>/callback`. Each command prompts for its value:
 
 ```bash
 npx wrangler secret put GITHUB_CLIENT_ID

@@ -1,7 +1,5 @@
 # Trailmates MCP Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Ship a remote MCP server on Cloudflare Workers that finds hikes by meaning (Vectorize + Workers AI), keeps per-user private hikes behind GitHub sign-in, and respects trail closures with dates.
 
 **Architecture:** A single Worker. `workers-oauth-provider` handles OAuth (consent page, GitHub sign-in, token issue) and forwards `/mcp` to a stateless `createMcpHandler` server. D1 is the source of truth and the authorization boundary; Vectorize is a rebuildable index and a performance filter only. Embeddings come from Workers AI. Pure domain logic (closure rules, filters, seed normalization) is separated from adapters so it is unit-tested with in-memory fakes.
