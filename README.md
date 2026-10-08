@@ -4,7 +4,7 @@ A remote [MCP](https://modelcontextprotocol.io) server, running on Cloudflare Wo
 
 ## How to use it
 
-Status: hosted at https://trailmates.tensor.group. GitHub sign-in on the hosted instance is being set up (see the note under Try it); until then you can run your own copy (see Deploy your own).
+Status: hosted at https://trailmates.tensor.group with GitHub sign-in enabled. You can also run your own copy (see [Deploy your own](#deploy-your-own)).
 
 **1. Add it to your MCP client.** In Claude Code:
 
@@ -52,7 +52,7 @@ claude mcp add --transport http trailmates https://trailmates.tensor.group/mcp
 
 Then authenticate from your client (in Claude Code, run `/mcp`). You will see a consent page for your client, then GitHub.
 
-The hosted instance is for demonstration only. Its GitHub OAuth app is not configured yet, so sign-in does not work there yet. Self-hosting ([Deploy your own](#deploy-your-own)) is the supported path. To see the flow without signing in, read the [demo script](docs/demo.md) (a recording has not been added yet).
+The hosted instance is a demonstration, run by the maintainer, and may change or go away; self-hosting ([Deploy your own](#deploy-your-own)) is the supported path. To see the flow without signing in, read the [demo script](docs/demo.md) (a recording has not been added yet).
 
 Example prompts:
 
